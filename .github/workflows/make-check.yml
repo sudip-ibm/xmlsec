@@ -9,11 +9,12 @@ on:
     branches:
           - master
           - xmlsec-1_2_x
+  workflow_dispatch:
 
 jobs:
   # linux: check against latest versions of everything
   check-ubuntu-s390x:
-    runs-on: lunix-s390x
+    runs-on: linux-s390x
     strategy:
       fail-fast: false
       matrix:
