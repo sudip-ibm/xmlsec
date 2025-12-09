@@ -12,8 +12,8 @@ on:
 
 jobs:
   # linux: check against latest versions of everything
-  check-ubuntu:
-    runs-on: ubuntu-latest
+  check-ubuntu-s390x:
+    runs-on: lunix-s390x
     strategy:
       fail-fast: false
       matrix:
@@ -55,8 +55,8 @@ jobs:
           make install
 
   # linux: check AWS-LC
-  check-ubuntu_aws_lc:
-    runs-on: ubuntu-latest
+  check-ubuntu-s390x_aws_lc:
+    runs-on: linux-s390x
     strategy:
       fail-fast: false
       matrix:
