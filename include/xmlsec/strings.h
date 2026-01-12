@@ -272,7 +272,6 @@ XMLSEC_EXPORT_VAR const xmlChar xmlSecHrefECKeyValue[];
 XMLSEC_EXPORT_VAR const xmlChar xmlSecNodeNamedCurve[];
 XMLSEC_EXPORT_VAR const xmlChar xmlSecNodePublicKey[];
 
-
 /*************************************************************************
  *
  * ECDH key agreement strings
@@ -346,6 +345,66 @@ XMLSEC_EXPORT_VAR const xmlChar xmlSecHrefGostR3410_2012GostR3411_2012_256[];
 
 XMLSEC_EXPORT_VAR const xmlChar xmlSecNameGostR3410_2012GostR3411_2012_512[];
 XMLSEC_EXPORT_VAR const xmlChar xmlSecHrefGostR3410_2012GostR3411_2012_512[];
+
+/*************************************************************************
+ *
+ * ML-DSA key strings
+ *
+ ************************************************************************/
+XMLSEC_EXPORT_VAR const xmlChar xmlSecNameMLDSAKeyValue[];
+XMLSEC_EXPORT_VAR const xmlChar xmlSecHrefMLDSAKeyValue[];
+
+/*************************************************************************
+ *
+ * ML-DSA signature trasnsform strings
+ *
+ ************************************************************************/
+XMLSEC_EXPORT_VAR const xmlChar xmlSecMLDSANs[];
+XMLSEC_EXPORT_VAR const xmlChar xmlSecNodeMLDSAContextString[];
+
+XMLSEC_EXPORT_VAR const xmlChar xmlSecNameMLDSA44[];
+XMLSEC_EXPORT_VAR const xmlChar xmlSecHrefMLDSA44[];
+
+XMLSEC_EXPORT_VAR const xmlChar xmlSecNameMLDSA65[];
+XMLSEC_EXPORT_VAR const xmlChar xmlSecHrefMLDSA65[];
+
+XMLSEC_EXPORT_VAR const xmlChar xmlSecNameMLDSA87[];
+XMLSEC_EXPORT_VAR const xmlChar xmlSecHrefMLDSA87[];
+
+/*************************************************************************
+ *
+ * SLH-DSA key strings
+ *
+ ************************************************************************/
+XMLSEC_EXPORT_VAR const xmlChar xmlSecNameSLHDSAKeyValue[];
+XMLSEC_EXPORT_VAR const xmlChar xmlSecHrefSLHDSAKeyValue[];
+
+/*************************************************************************
+ *
+ * SLH-DSA signature trasnsform strings
+ *
+ ************************************************************************/
+XMLSEC_EXPORT_VAR const xmlChar xmlSecSLHDSANs[];
+XMLSEC_EXPORT_VAR const xmlChar xmlSecNodeSLHDSAContextString[];
+
+XMLSEC_EXPORT_VAR const xmlChar xmlSecNameSLHDSA_SHA2_128f[];
+XMLSEC_EXPORT_VAR const xmlChar xmlSecHrefSLHDSA_SHA2_128f[];
+
+XMLSEC_EXPORT_VAR const xmlChar xmlSecNameSLHDSA_SHA2_128s[];
+XMLSEC_EXPORT_VAR const xmlChar xmlSecHrefSLHDSA_SHA2_128s[];
+
+XMLSEC_EXPORT_VAR const xmlChar xmlSecNameSLHDSA_SHA2_192f[];
+XMLSEC_EXPORT_VAR const xmlChar xmlSecHrefSLHDSA_SHA2_192f[];
+
+XMLSEC_EXPORT_VAR const xmlChar xmlSecNameSLHDSA_SHA2_192s[];
+XMLSEC_EXPORT_VAR const xmlChar xmlSecHrefSLHDSA_SHA2_192s[];
+
+XMLSEC_EXPORT_VAR const xmlChar xmlSecNameSLHDSA_SHA2_256f[];
+XMLSEC_EXPORT_VAR const xmlChar xmlSecHrefSLHDSA_SHA2_256f[];
+
+XMLSEC_EXPORT_VAR const xmlChar xmlSecNameSLHDSA_SHA2_256s[];
+XMLSEC_EXPORT_VAR const xmlChar xmlSecHrefSLHDSA_SHA2_256s[];
+
 
 /*************************************************************************
  *

@@ -36,6 +36,14 @@
 #include <openssl/evp.h>
 #endif /* XMLSEC_NO_RSA */
 
+#ifndef XMLSEC_NO_MLDSA
+#include <openssl/evp.h>
+#endif /* XMLSEC_NO_MLDSA */
+
+#ifndef XMLSEC_NO_SLHDSA
+#include <openssl/evp.h>
+#endif /* XMLSEC_NO_SLHDSA */
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
@@ -48,6 +56,9 @@ extern "C" {
 #if defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER >= 0x30500000L
 /* LibreSSL implements (most of) OpenSSL 1.1 API */
 #define XMLSEC_OPENSSL_API_111      1
+#elif OPENSSL_VERSION_NUMBER >= 0x30500000L
+#define XMLSEC_OPENSSL_API_350      1
+#define XMLSEC_OPENSSL_API_300      1
 #elif OPENSSL_VERSION_NUMBER >= 0x30000000L
 #define XMLSEC_OPENSSL_API_300      1
 #elif OPENSSL_VERSION_NUMBER >= 0x10101000L
@@ -133,6 +144,14 @@ XMLSEC_CRYPTO_EXPORT BIO*               xmlSecOpenSSLCreateReadFileBio (const ch
 #ifdef OPENSSL_NO_RSA
 #define XMLSEC_NO_RSA       1
 #endif /* OPENSSL_NO_RSA */
+
+#ifdef OPENSSL_NO_ML_DSA
+#define XMLSEC_NO_MLDSA      1
+#endif /* OPENSSL_NO_ML_DSA */
+
+#ifdef OPENSSL_NO_SLH_DSA
+#define XMLSEC_NO_SLHDSA      1
+#endif /* OPENSSL_NO_SLH_DSA */
 
 #ifdef OPENSSL_NO_SHA1
 #define XMLSEC_NO_SHA1      1
@@ -1026,6 +1045,131 @@ XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformRsaPssSha3_512GetKl
 #endif /* XMLSEC_NO_SHA3 */
 
 #endif /* XMLSEC_NO_RSA */
+
+/********************************************************************
+ *
+ * ML DSA key and transforms (EXPERIMENTAL)
+ *
+ *******************************************************************/
+#ifndef XMLSEC_NO_MLDSA
+
+/**
+ * xmlSecOpenSSLKeyDataMLDSAId:
+ *
+ * The ML-DSA key klass.
+ */
+#define xmlSecOpenSSLKeyDataMLDSAId \
+        xmlSecOpenSSLKeyDataMLDSAGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecKeyDataId    xmlSecOpenSSLKeyDataMLDSAGetKlass   (void);
+XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLKeyDataMLDSAAdoptEvp   (xmlSecKeyDataPtr data,
+                                                                             EVP_PKEY* pKey);
+XMLSEC_CRYPTO_EXPORT EVP_PKEY*          xmlSecOpenSSLKeyDataMLDSAGetEvp     (xmlSecKeyDataPtr data);
+XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLKeyDataMLDSAGetKL      (xmlSecKeyDataPtr data);
+
+
+/**
+ * xmlSecOpenSSLTransformMLDSA44Id:
+ *
+ * The ML-DSA-44 signature transform klass.
+ */
+#define xmlSecOpenSSLTransformMLDSA44Id  \
+        xmlSecOpenSSLTransformMLDSA44GetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformMLDSA44GetKlass(void);
+
+
+/**
+ * xmlSecOpenSSLTransformMLDSA65Id:
+ *
+ * The ML-DSA-65 signature transform klass.
+ */
+#define xmlSecOpenSSLTransformMLDSA65Id  \
+        xmlSecOpenSSLTransformMLDSA65GetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformMLDSA65GetKlass(void);
+
+
+/**
+ * xmlSecOpenSSLTransformMLDSA87Id:
+ *
+ * The ML-DSA-87 signature transform klass.
+ */
+#define xmlSecOpenSSLTransformMLDSA87Id  \
+        xmlSecOpenSSLTransformMLDSA87GetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformMLDSA87GetKlass(void);
+
+#endif /* XMLSEC_NO_MLDSA */
+
+
+/********************************************************************
+ *
+ * SLH-DSA key and transforms (EXPERIMENTAL)
+ *
+ *******************************************************************/
+#ifndef XMLSEC_NO_SLHDSA
+
+/**
+ * xmlSecOpenSSLKeyDataSLHDSAId:
+ *
+ * The SLH-DSA key klass.
+ */
+#define xmlSecOpenSSLKeyDataSLHDSAId \
+        xmlSecOpenSSLKeyDataSLHDSAGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecKeyDataId    xmlSecOpenSSLKeyDataSLHDSAGetKlass   (void);
+XMLSEC_CRYPTO_EXPORT int                xmlSecOpenSSLKeyDataSLHDSAAdoptEvp   (xmlSecKeyDataPtr data,
+                                                                             EVP_PKEY* pKey);
+XMLSEC_CRYPTO_EXPORT EVP_PKEY*          xmlSecOpenSSLKeyDataSLHDSAGetEvp     (xmlSecKeyDataPtr data);
+
+
+/**
+ * xmlSecOpenSSLTransformSLHDSA_SHA2_128fId:
+ *
+ * The SLH-DSA-SHA2-128f signature transform klass.
+ */
+#define xmlSecOpenSSLTransformSLHDSA_SHA2_128fId  \
+        xmlSecOpenSSLTransformSLHDSA_SHA2_128fGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformSLHDSA_SHA2_128fGetKlass(void);
+/**
+ * xmlSecOpenSSLTransformSLHDSA_SHA2_128sId:
+ *
+ * The SLH-DSA-SHA2-128s signature transform klass.
+ */
+#define xmlSecOpenSSLTransformSLHDSA_SHA2_128sId  \
+        xmlSecOpenSSLTransformSLHDSA_SHA2_128sGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformSLHDSA_SHA2_128sGetKlass(void);
+/**
+ * xmlSecOpenSSLTransformSLHDSA_SHA2_192fId:
+ *
+ * The SLH-DSA-SHA2-192f signature transform klass.
+ */
+#define xmlSecOpenSSLTransformSLHDSA_SHA2_192fId  \
+        xmlSecOpenSSLTransformSLHDSA_SHA2_192fGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformSLHDSA_SHA2_192fGetKlass(void);
+/**
+ * xmlSecOpenSSLTransformSLHDSA_SHA2_192sId:
+ *
+ * The SLH-DSA-SHA2-192s signature transform klass.
+ */
+#define xmlSecOpenSSLTransformSLHDSA_SHA2_192sId  \
+        xmlSecOpenSSLTransformSLHDSA_SHA2_192sGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformSLHDSA_SHA2_192sGetKlass(void);
+/**
+ * xmlSecOpenSSLTransformSLHDSA_SHA2_256fId:
+ *
+ * The SLH-DSA-SHA2-256f signature transform klass.
+ */
+#define xmlSecOpenSSLTransformSLHDSA_SHA2_256fId  \
+        xmlSecOpenSSLTransformSLHDSA_SHA2_256fGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformSLHDSA_SHA2_256fGetKlass(void);
+/**
+ * xmlSecOpenSSLTransformSLHDSA_SHA2_256sId:
+ *
+ * The SLH-DSA-SHA2-256s signature transform klass.
+ */
+#define xmlSecOpenSSLTransformSLHDSA_SHA2_256sId  \
+        xmlSecOpenSSLTransformSLHDSA_SHA2_256sGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecOpenSSLTransformSLHDSA_SHA2_256sGetKlass(void);
+
+
+#endif /* XMLSEC_NO_SLHDSA */
 
 
 /********************************************************************

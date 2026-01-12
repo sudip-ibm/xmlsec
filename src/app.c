@@ -327,6 +327,42 @@ xmlSecKeyDataRsaGetKlass(void) {
 
     return(xmlSecCryptoDLGetFunctions()->keyDataRsaGetKlass());
 }
+/**
+ * xmlSecKeyDataMLDSAGetKlass:
+ *
+ * The ML-DSA key data klass.
+ *
+ * Returns: ML-DSA key data klass or NULL if an error occurs
+ * (xmlsec-crypto library is not loaded or the ML-DSA key data
+ * klass is not implemented).
+ */
+xmlSecKeyDataId
+xmlSecKeyDataMLDSAGetKlass(void) {
+    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->keyDataMLDSAGetKlass == NULL)) {
+        xmlSecNotImplementedError2(missingMethodError, "keyDataMLDSAGetKlass");
+        return(xmlSecKeyDataIdUnknown);
+    }
+
+    return(xmlSecCryptoDLGetFunctions()->keyDataMLDSAGetKlass());
+}
+/**
+ * xmlSecKeyDataSLHDSAGetKlass:
+ *
+ * The SLH-DSA key data klass.
+ *
+ * Returns: SLH-DSA key data klass or NULL if an error occurs
+ * (xmlsec-crypto library is not loaded or the SLH-DSA key data
+ * klass is not implemented).
+ */
+xmlSecKeyDataId
+xmlSecKeyDataSLHDSAGetKlass(void) {
+    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->keyDataSLHDSAGetKlass == NULL)) {
+        xmlSecNotImplementedError2(missingMethodError, "keyDataSLHDSAGetKlass");
+        return(xmlSecKeyDataIdUnknown);
+    }
+
+    return(xmlSecCryptoDLGetFunctions()->keyDataSLHDSAGetKlass());
+}
 
 /**
  * xmlSecKeyDataX509GetKlass:
@@ -972,6 +1008,66 @@ xmlSecTransformGostR3410_2012GostR3411_2012_512GetKlass(void) {
     return(xmlSecCryptoDLGetFunctions()->transformGostR3410_2012GostR3411_2012_512GetKlass());
 }
 
+
+/**
+ * xmlSecTransformRsaOaepEnc11GetKlass:
+ *
+ * The RSA-OAEP key transport transform klass (XMLEnc 1.1).
+ *
+ * Returns: RSA-OAEP key transport transform klass or NULL if an error
+ * occurs (the xmlsec-crypto library is not loaded or this transform is not
+ * implemented).
+ */
+xmlSecTransformId
+xmlSecTransformRsaOaepEnc11GetKlass(void) {
+    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->transformRsaOaepEnc11GetKlass == NULL)) {
+        xmlSecNotImplementedError2(missingMethodError, "transformRsaOaepEnc11GetKlass");
+        return(xmlSecTransformIdUnknown);
+    }
+
+    return(xmlSecCryptoDLGetFunctions()->transformRsaOaepEnc11GetKlass());
+}
+
+
+/**
+ * xmlSecTransformGostR3411_94GetKlass:
+ *
+ * GOSTR3411_94 digest transform klass.
+ *
+ * Returns: pointer to GOSTR3411_94 digest transform klass or NULL if an error
+ * occurs (the xmlsec-crypto library is not loaded or this transform is not
+ * implemented).
+ */
+xmlSecTransformId
+xmlSecTransformGostR3411_94GetKlass(void) {
+    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->transformGostR3411_94GetKlass == NULL)) {
+        xmlSecNotImplementedError2(missingMethodError, "transformGostR3411_94GetKlass");
+        return(xmlSecTransformIdUnknown);
+    }
+
+    return(xmlSecCryptoDLGetFunctions()->transformGostR3411_94GetKlass());
+}
+
+/**
+ * xmlSecTransformGostR3411_2012_256GetKlass:
+ *
+ * GOST R 34.11-2012 256 bit digest transform klass.
+ *
+ * Returns: pointer to GOST R 34.11-2012 256 bit digest transform klass or NULL if an error
+ * occurs (the xmlsec-crypto library is not loaded or this transform is not
+ * implemented).
+ */
+
+xmlSecTransformId
+xmlSecTransformGostR3411_2012_256GetKlass(void) {
+    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->transformGostR3411_2012_256GetKlass == NULL)) {
+        xmlSecNotImplementedError2(missingMethodError, "transformGostR3411_2012_256GetKlass");
+        return(xmlSecTransformIdUnknown);
+    }
+
+    return(xmlSecCryptoDLGetFunctions()->transformGostR3411_2012_256GetKlass());
+}
+
 /**
  * xmlSecTransformHmacMd5GetKlass:
  *
@@ -1124,6 +1220,62 @@ xmlSecTransformMd5GetKlass(void) {
     return(xmlSecCryptoDLGetFunctions()->transformMd5GetKlass());
 }
 
+/**
+ * xmlSecTransformMLDSA44GetKlass:
+ *
+ * The ML-DSA-44 signature transform klass.
+ *
+ * Returns: ML-DSA-44 signature transform klass or NULL if an error
+ * occurs (the xmlsec-crypto library is not loaded or this transform is not
+ * implemented).
+ */
+xmlSecTransformId
+xmlSecTransformMLDSA44GetKlass(void) {
+    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->transformMLDSA44GetKlass == NULL)) {
+        xmlSecNotImplementedError2(missingMethodError, "transformMLDSA44GetKlass");
+        return(xmlSecTransformIdUnknown);
+    }
+
+    return(xmlSecCryptoDLGetFunctions()->transformMLDSA44GetKlass());
+}
+
+/**
+ * xmlSecTransformMLDSA65GetKlass:
+ *
+ * The ML-DSA-65 signature transform klass.
+ *
+ * Returns: ML-DSA-65 signature transform klass or NULL if an error
+ * occurs (the xmlsec-crypto library is not loaded or this transform is not
+ * implemented).
+ */
+xmlSecTransformId
+xmlSecTransformMLDSA65GetKlass(void) {
+    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->transformMLDSA65GetKlass == NULL)) {
+        xmlSecNotImplementedError2(missingMethodError, "transformMLDSA65GetKlass");
+        return(xmlSecTransformIdUnknown);
+    }
+
+    return(xmlSecCryptoDLGetFunctions()->transformMLDSA65GetKlass());
+}
+
+/**
+ * xmlSecTransformMLDSA87GetKlass:
+ *
+ * The ML-DSA-87 signature transform klass.
+ *
+ * Returns: ML-DSA-87 signature transform klass or NULL if an error
+ * occurs (the xmlsec-crypto library is not loaded or this transform is not
+ * implemented).
+ */
+xmlSecTransformId
+xmlSecTransformMLDSA87GetKlass(void) {
+    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->transformMLDSA87GetKlass == NULL)) {
+        xmlSecNotImplementedError2(missingMethodError, "transformMLDSA87GetKlass");
+        return(xmlSecTransformIdUnknown);
+    }
+
+    return(xmlSecCryptoDLGetFunctions()->transformMLDSA87GetKlass());
+}
 /**
 * xmlSecTransformPbkdf2GetKlass:
 *
@@ -1510,63 +1662,119 @@ xmlSecTransformRsaOaepGetKlass(void) {
 }
 
 /**
- * xmlSecTransformRsaOaepEnc11GetKlass:
+ * xmlSecTransformSLHDSA_SHA2_128fGetKlass:
  *
- * The RSA-OAEP key transport transform klass (XMLEnc 1.1).
+ * The SLH-DSA-SHA2-128f signature transform klass.
  *
- * Returns: RSA-OAEP key transport transform klass or NULL if an error
+ * Returns: SLH-DSA-SHA2-128f signature transform klass or NULL if an error
  * occurs (the xmlsec-crypto library is not loaded or this transform is not
  * implemented).
  */
 xmlSecTransformId
-xmlSecTransformRsaOaepEnc11GetKlass(void) {
-    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->transformRsaOaepEnc11GetKlass == NULL)) {
-        xmlSecNotImplementedError2(missingMethodError, "transformRsaOaepEnc11GetKlass");
+xmlSecTransformSLHDSA_SHA2_128fGetKlass(void) {
+    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->transformSLHDSA_SHA2_128fGetKlass == NULL)) {
+        xmlSecNotImplementedError2(missingMethodError, "transformSLHDSA_SHA2_128fGetKlass");
         return(xmlSecTransformIdUnknown);
     }
 
-    return(xmlSecCryptoDLGetFunctions()->transformRsaOaepEnc11GetKlass());
-}
-
-
-/**
- * xmlSecTransformGostR3411_94GetKlass:
- *
- * GOSTR3411_94 digest transform klass.
- *
- * Returns: pointer to GOSTR3411_94 digest transform klass or NULL if an error
- * occurs (the xmlsec-crypto library is not loaded or this transform is not
- * implemented).
- */
-xmlSecTransformId
-xmlSecTransformGostR3411_94GetKlass(void) {
-    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->transformGostR3411_94GetKlass == NULL)) {
-        xmlSecNotImplementedError2(missingMethodError, "transformGostR3411_94GetKlass");
-        return(xmlSecTransformIdUnknown);
-    }
-
-    return(xmlSecCryptoDLGetFunctions()->transformGostR3411_94GetKlass());
+    return(xmlSecCryptoDLGetFunctions()->transformSLHDSA_SHA2_128fGetKlass());
 }
 
 /**
- * xmlSecTransformGostR3411_2012_256GetKlass:
+ * xmlSecTransformSLHDSA_SHA2_128sGetKlass:
  *
- * GOST R 34.11-2012 256 bit digest transform klass.
+ * The SLH-DSA-SHA2-128s signature transform klass.
  *
- * Returns: pointer to GOST R 34.11-2012 256 bit digest transform klass or NULL if an error
+ * Returns: SLH-DSA-SHA2-128s signature transform klass or NULL if an error
  * occurs (the xmlsec-crypto library is not loaded or this transform is not
  * implemented).
  */
-
 xmlSecTransformId
-xmlSecTransformGostR3411_2012_256GetKlass(void) {
-    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->transformGostR3411_2012_256GetKlass == NULL)) {
-        xmlSecNotImplementedError2(missingMethodError, "transformGostR3411_2012_256GetKlass");
+xmlSecTransformSLHDSA_SHA2_128sGetKlass(void) {
+    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->transformSLHDSA_SHA2_128sGetKlass == NULL)) {
+        xmlSecNotImplementedError2(missingMethodError, "transformSLHDSA_SHA2_128sGetKlass");
         return(xmlSecTransformIdUnknown);
     }
 
-    return(xmlSecCryptoDLGetFunctions()->transformGostR3411_2012_256GetKlass());
+    return(xmlSecCryptoDLGetFunctions()->transformSLHDSA_SHA2_128sGetKlass());
 }
+
+/**
+ * xmlSecTransformSLHDSA_SHA2_192fGetKlass:
+ *
+ * The SLH-DSA-SHA2-192f signature transform klass.
+ *
+ * Returns: SLH-DSA-SHA2-192f signature transform klass or NULL if an error
+ * occurs (the xmlsec-crypto library is not loaded or this transform is not
+ * implemented).
+ */
+xmlSecTransformId
+xmlSecTransformSLHDSA_SHA2_192fGetKlass(void) {
+    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->transformSLHDSA_SHA2_192fGetKlass == NULL)) {
+        xmlSecNotImplementedError2(missingMethodError, "transformSLHDSA_SHA2_192fGetKlass");
+        return(xmlSecTransformIdUnknown);
+    }
+
+    return(xmlSecCryptoDLGetFunctions()->transformSLHDSA_SHA2_192fGetKlass());
+}
+
+/**
+ * xmlSecTransformSLHDSA_SHA2_192sGetKlass:
+ *
+ * The SLH-DSA-SHA2-192s signature transform klass.
+ *
+ * Returns: SLH-DSA-SHA2-192s signature transform klass or NULL if an error
+ * occurs (the xmlsec-crypto library is not loaded or this transform is not
+ * implemented).
+ */
+xmlSecTransformId
+xmlSecTransformSLHDSA_SHA2_192sGetKlass(void) {
+    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->transformSLHDSA_SHA2_192sGetKlass == NULL)) {
+        xmlSecNotImplementedError2(missingMethodError, "transformSLHDSA_SHA2_192sGetKlass");
+        return(xmlSecTransformIdUnknown);
+    }
+
+    return(xmlSecCryptoDLGetFunctions()->transformSLHDSA_SHA2_192sGetKlass());
+}
+
+/**
+ * xmlSecTransformSLHDSA_SHA2_256fGetKlass:
+ *
+ * The SLH-DSA-SHA2-256f signature transform klass.
+ *
+ * Returns: SLH-DSA-SHA2-256f signature transform klass or NULL if an error
+ * occurs (the xmlsec-crypto library is not loaded or this transform is not
+ * implemented).
+ */
+xmlSecTransformId
+xmlSecTransformSLHDSA_SHA2_256fGetKlass(void) {
+    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->transformSLHDSA_SHA2_256fGetKlass == NULL)) {
+        xmlSecNotImplementedError2(missingMethodError, "transformSLHDSA_SHA2_256fGetKlass");
+        return(xmlSecTransformIdUnknown);
+    }
+
+    return(xmlSecCryptoDLGetFunctions()->transformSLHDSA_SHA2_256fGetKlass());
+}
+
+/**
+ * xmlSecTransformSLHDSA_SHA2_256sGetKlass:
+ *
+ * The SLH-DSA-SHA2-256s signature transform klass.
+ *
+ * Returns: SLH-DSA-SHA2-256s signature transform klass or NULL if an error
+ * occurs (the xmlsec-crypto library is not loaded or this transform is not
+ * implemented).
+ */
+xmlSecTransformId
+xmlSecTransformSLHDSA_SHA2_256sGetKlass(void) {
+    if((xmlSecCryptoDLGetFunctions() == NULL) || (xmlSecCryptoDLGetFunctions()->transformSLHDSA_SHA2_256sGetKlass == NULL)) {
+        xmlSecNotImplementedError2(missingMethodError, "transformSLHDSA_SHA2_256sGetKlass");
+        return(xmlSecTransformIdUnknown);
+    }
+
+    return(xmlSecCryptoDLGetFunctions()->transformSLHDSA_SHA2_256sGetKlass());
+}
+
 
 /**
  * xmlSecTransformGostR3411_2012_512GetKlass:

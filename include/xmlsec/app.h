@@ -116,6 +116,13 @@ XMLSEC_EXPORT xmlSecKeyDataId                   xmlSecKeyDataGostR3410_2012_512G
 #define xmlSecKeyDataHmacId                     xmlSecKeyDataHmacGetKlass()
 XMLSEC_EXPORT xmlSecKeyDataId                   xmlSecKeyDataHmacGetKlass(void);
 /**
+ * xmlSecKeyDataMLDSAId:
+ *
+ * The ML-DSA key klass.
+ */
+#define xmlSecKeyDataMLDSAId                    xmlSecKeyDataMLDSAGetKlass()
+XMLSEC_EXPORT xmlSecKeyDataId                   xmlSecKeyDataMLDSAGetKlass(void);
+/**
  * xmlSecKeyDataPbkdf2Id:
  *
  * The PBKDF2 key klass.
@@ -129,6 +136,13 @@ XMLSEC_EXPORT xmlSecKeyDataId                   xmlSecKeyDataPbkdf2GetKlass(void
  */
 #define xmlSecKeyDataRsaId                      xmlSecKeyDataRsaGetKlass()
 XMLSEC_EXPORT xmlSecKeyDataId                   xmlSecKeyDataRsaGetKlass(void);
+/**
+ * xmlSecKeyDataSLHDSAId:
+ *
+ * The SLH-DSA key klass.
+ */
+#define xmlSecKeyDataSLHDSAId                   xmlSecKeyDataSLHDSAGetKlass()
+XMLSEC_EXPORT xmlSecKeyDataId                   xmlSecKeyDataSLHDSAGetKlass(void);
 /**
  * xmlSecKeyDataX509Id:
  *
@@ -438,6 +452,28 @@ XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformHmacSha512GetKlas
 #define xmlSecTransformMd5Id                    xmlSecTransformMd5GetKlass()
 XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformMd5GetKlass(void);
 /**
+ * xmlSecTransformMLDSA44Id:
+ *
+ * The ML-DSA-44 signature transform klass.
+ */
+#define xmlSecTransformMLDSA44Id                xmlSecTransformMLDSA44GetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformMLDSA44GetKlass(void);
+/**
+ * xmlSecTransformMLDSA65Id:
+ *
+ * The ML-DSA-65 signature transform klass.
+ */
+#define xmlSecTransformMLDSA65Id                xmlSecTransformMLDSA65GetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformMLDSA65GetKlass(void);
+/**
+ * xmlSecTransformMLDSA87Id:
+ *
+ * The ML-DSA-87 signature transform klass.
+ */
+#define xmlSecTransformMLDSA87Id                xmlSecTransformMLDSA87GetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformMLDSA87GetKlass(void);
+
+/**
 * xmlSecTransformPbkdf2Id:
 *
 * The PBKDF2 key derivation transform klass.
@@ -588,6 +624,51 @@ XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformRsaOaepGetKlass(v
  */
 #define xmlSecTransformRsaOaepEnc11Id           xmlSecTransformRsaOaepEnc11GetKlass()
 XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformRsaOaepEnc11GetKlass(void);
+/**
+ * xmlSecTransformSLHDSA_SHA2_128f_Id:
+ *
+ * The SLH-DSA-SHA2-128f signature transform klass.
+ */
+#define xmlSecTransformSLHDSA_SHA2_128f_Id      xmlSecTransformSLHDSA_SHA2_128fGetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformSLHDSA_SHA2_128fGetKlass(void);
+/**
+ * xmlSecTransformSLHDSA_SHA2_128s_Id:
+ *
+ * The SLH-DSA-SHA2-128s signature transform klass.
+ */
+#define xmlSecTransformSLHDSA_SHA2_128s_Id      xmlSecTransformSLHDSA_SHA2_128sGetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformSLHDSA_SHA2_128sGetKlass(void);
+/**
+ * xmlSecTransformSLHDSA_SHA2_192f_Id:
+ *
+ * The SLH-DSA-SHA2-192f signature transform klass.
+ */
+#define xmlSecTransformSLHDSA_SHA2_192f_Id      xmlSecTransformSLHDSA_SHA2_192fGetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformSLHDSA_SHA2_192fGetKlass(void);
+/**
+ * xmlSecTransformSLHDSA_SHA2_192s_Id:
+ *
+ * The SLH-DSA-SHA2-192s signature transform klass.
+ */
+#define xmlSecTransformSLHDSA_SHA2_192s_Id      xmlSecTransformSLHDSA_SHA2_192sGetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformSLHDSA_SHA2_192sGetKlass(void);
+/**
+ * xmlSecTransformSLHDSA_SHA2_256f_Id:
+ *
+ * The SLH-DSA-SHA2-256f signature transform klass.
+ */
+#define xmlSecTransformSLHDSA_SHA2_256f_Id      xmlSecTransformSLHDSA_SHA2_256fGetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformSLHDSA_SHA2_256fGetKlass(void);
+/**
+ * xmlSecTransformSLHDSA_SHA2_256s_Id:
+ *
+ * The SLH-DSA-SHA2-256s signature transform klass.
+ */
+#define xmlSecTransformSLHDSA_SHA2_256s_Id      xmlSecTransformSLHDSA_SHA2_256sGetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformSLHDSA_SHA2_256sGetKlass(void);
+
+
+
 /**
  * xmlSecTransformGostR3411_94Id:
  *

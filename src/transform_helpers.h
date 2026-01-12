@@ -92,6 +92,25 @@ XMLSEC_EXPORT int xmlSecTransformHmacVerify             (const xmlSecByte* data,
 
 #endif /* XMLSEC_NO_HMAC */
 
+/********************************** ML-DSA *******************************/
+#ifndef XMLSEC_NO_MLDSA
+
+#define XMLSEC_MLDSA_MAX_SIZE   ((xmlSecSize)255)
+
+XMLSEC_EXPORT int xmlSecTransformMLDSAReadContextString(xmlNodePtr node,
+                                                        xmlSecBufferPtr res);
+#endif /* XMLSEC_NO_MLDSA */
+
+
+/********************************** SLH-DSA *******************************/
+#ifndef XMLSEC_NO_SLHDSA
+
+#define XMLSEC_SLHDSA_MAX_SIZE  ((xmlSecSize)255)
+
+XMLSEC_EXPORT int xmlSecTransformSLHDSAReadContextString(xmlNodePtr node,
+                                                        xmlSecBufferPtr res);
+#endif /* XMLSEC_NO_SLHDSA */
+
 
 /**************************** PBKDF2 ********************************/
 #ifndef XMLSEC_NO_PBKDF2

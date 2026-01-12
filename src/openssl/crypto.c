@@ -136,6 +136,14 @@ xmlSecCryptoGetFunctions_openssl(void) {
     gXmlSecOpenSSLFunctions->keyDataRsaGetKlass         = xmlSecOpenSSLKeyDataRsaGetKlass;
 #endif /* XMLSEC_NO_RSA */
 
+#ifndef XMLSEC_NO_MLDSA
+    gXmlSecOpenSSLFunctions->keyDataMLDSAGetKlass       = xmlSecOpenSSLKeyDataMLDSAGetKlass;
+#endif /* XMLSEC_NO_MLDSA */
+
+#ifndef XMLSEC_NO_SLHDSA
+    gXmlSecOpenSSLFunctions->keyDataSLHDSAGetKlass      = xmlSecOpenSSLKeyDataSLHDSAGetKlass;
+#endif /* XMLSEC_NO_SLHDSA */
+
 #ifndef XMLSEC_NO_X509
     gXmlSecOpenSSLFunctions->keyDataX509GetKlass        = xmlSecOpenSSLKeyDataX509GetKlass;
     gXmlSecOpenSSLFunctions->keyDataRawX509CertGetKlass = xmlSecOpenSSLKeyDataRawX509CertGetKlass;
@@ -292,6 +300,14 @@ xmlSecCryptoGetFunctions_openssl(void) {
     gXmlSecOpenSSLFunctions->transformMd5GetKlass               = xmlSecOpenSSLTransformMd5GetKlass;
 #endif /* XMLSEC_NO_MD5 */
 
+    /******************************* ML-DSA ********************************/
+#ifndef XMLSEC_NO_MLDSA
+    gXmlSecOpenSSLFunctions->transformMLDSA44GetKlass            = xmlSecOpenSSLTransformMLDSA44GetKlass;
+    gXmlSecOpenSSLFunctions->transformMLDSA65GetKlass            = xmlSecOpenSSLTransformMLDSA65GetKlass;
+    gXmlSecOpenSSLFunctions->transformMLDSA87GetKlass            = xmlSecOpenSSLTransformMLDSA87GetKlass;
+#endif /* XMLSEC_NO_MLDSA */
+
+
     /******************************* PBKDF2 ********************************/
 #ifndef XMLSEC_NO_PBKDF2
     gXmlSecOpenSSLFunctions->transformPbkdf2GetKlass            = xmlSecOpenSSLTransformPbkdf2GetKlass;
@@ -373,6 +389,17 @@ xmlSecCryptoGetFunctions_openssl(void) {
 #endif /* XMLSEC_NO_RSA_OAEP */
 
 #endif /* XMLSEC_NO_RSA */
+
+    /******************************* SLH-DSA ********************************/
+#ifndef XMLSEC_NO_SLHDSA
+    gXmlSecOpenSSLFunctions->transformSLHDSA_SHA2_128fGetKlass = xmlSecOpenSSLTransformSLHDSA_SHA2_128fGetKlass;
+    gXmlSecOpenSSLFunctions->transformSLHDSA_SHA2_128sGetKlass = xmlSecOpenSSLTransformSLHDSA_SHA2_128sGetKlass;
+    gXmlSecOpenSSLFunctions->transformSLHDSA_SHA2_192fGetKlass = xmlSecOpenSSLTransformSLHDSA_SHA2_192fGetKlass;
+    gXmlSecOpenSSLFunctions->transformSLHDSA_SHA2_192sGetKlass = xmlSecOpenSSLTransformSLHDSA_SHA2_192sGetKlass;
+    gXmlSecOpenSSLFunctions->transformSLHDSA_SHA2_256fGetKlass = xmlSecOpenSSLTransformSLHDSA_SHA2_256fGetKlass;
+    gXmlSecOpenSSLFunctions->transformSLHDSA_SHA2_256sGetKlass = xmlSecOpenSSLTransformSLHDSA_SHA2_256sGetKlass;
+#endif /* XMLSEC_NO_SLHDSA */
+
 
     /******************************* SHA ********************************/
 #ifndef XMLSEC_NO_SHA1

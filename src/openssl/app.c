@@ -65,6 +65,8 @@
 #include "../cast_helpers.h"
 #include "private.h"
 
+
+
 static int      xmlSecOpenSSLDefaultPasswordCallback    (char *buf,
                                                          int bufsiz,
                                                          int verify,
@@ -141,7 +143,6 @@ xmlSecOpenSSLAppInit(const char* config) {
     xmlSecOpenSSLSetLibCtx(libCtx);
     */
 #endif /* XMLSEC_OPENSSL_API_300 */
-
     int ret;
     uint64_t opts = 0;
 
@@ -188,10 +189,12 @@ error:
  */
 int
 xmlSecOpenSSLAppShutdown(void) {
-    /* debug only feature, should not be used in production */
+    /* debug only feature, should not be used in production, on windows OpenSSL is not happy about FILE* */
+#if !defined(_MSC_VER)
     if(xmlSecErrorsPrintCryptoLibraryLogOnExitIsEnabled() == 1) {
         ERR_print_errors_fp(stderr);
     }
+#endif /* _MSC_VER */
     /* OpenSSL 1.1.0+ does not require explicit cleanup */
     return(0);
 }

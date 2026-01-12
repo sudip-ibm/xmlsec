@@ -143,6 +143,17 @@ typedef int xmlSecOpenSSLSizeT;
 
 #endif /* defined(LIBRESSL_VERSION_NUMBER) */
 
+
+/******************************************************************************
+ *
+ * OpenSSL 3.5.0 compatibility
+ *
+ *****************************************************************************/
+#if !defined(XMLSEC_OPENSSL_API_350)
+#define XMLSEC_NO_MLDSA                     1
+#define XMLSEC_NO_SLHDSA                    1
+#endif /* !defined(XMLSEC_OPENSSL_API_350) */
+
 /******************************************************************************
  *
  * OpenSSL 3.0.0 compatibility
