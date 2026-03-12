@@ -9,12 +9,11 @@ on:
     branches:
           - master
           - xmlsec-1_2_x
-  workflow_dispatch:
 
 jobs:
   # linux: check against latest versions of everything
-  check-ubuntu-s390x:
-    runs-on: linux-s390x
+  check-ubuntu:
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -56,8 +55,100 @@ jobs:
           make install
 
   # linux: check AWS-LC
-  check-ubuntu-s390x_aws_lc:
-    runs-on: linux-s390x
+  check-ubuntu_aws_lc:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # default static build
+          - config_flags: --enable-static --enable-static-linking
+    env:
+      AWS_LC_VERSION: "1.63.0"
+    steps:
+    - name: install dependencies
+      run: |
+          sudo apt update
+          sudo apt install cmake ninja-build clang perl golang wget
+          sudo apt install automake autoconf libtool libtool-bin libltdl-dev libltdl7
+          sudo apt install libxml2 libxml2-dev libxslt1.1 libxslt1-dev
+    - name: build aws lc
+      run: |
+          mkdir ../aws-lc && cd ../aws-lc
+          wget "https://github.com/aws/aws-lc/archive/refs/tags/v${{ env.AWS_LC_VERSION }}.zip"
+          unzip "v${{ env.AWS_LC_VERSION }}.zip"
+          mkdir build && cd build
+          cmake -GNinja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=${GITHUB_WORKSPACE}/../aws-lc/install ../aws-lc-${{ env.AWS_LC_VERSION }}
+          ninja install
+    - uses: actions/checkout@v2
+    - name: create-build-dirs
+      run: |
+          mkdir build.dir install.dir
+    - name: configure
+      working-directory: build.dir
+      run: |
+          ../autogen.sh --prefix=${GITHUB_WORKSPACE}/install.dir ${{ matrix.config_flags }} \
+            --enable-werror --enable-pedantic \
+            --with-openssl=${GITHUB_WORKSPACE}/../aws-lc/install \
+            --without-gnutls --without-nss --without-gcrypt
+    - name: make
+      working-directory: build.dir
+      run: |
+          make
+    - name: make check
+      working-directory: build.dir
+      run: |
+          make check
+    - name: make install
+      working-directory: build.dir
+      run: |
+          make install
+  #check linux s390x
+  check-ubuntu-s390x:
+    runs-on: ubuntu-24.04-s390x
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # default build
+          - config_flags:
+          # default build with all legacy features
+          - config_flags: --enable-legacy-features --enable-ftp --enable-http
+          # static openssl build
+          - config_flags: --enable-static --enable-static-linking --disable-openssl3-engines --without-nss --without-gnutls --without-gcrypt --enable-legacy-features
+          # static gnutls build with GOST
+          - config_flags: --enable-static --enable-static-linking --without-openssl --without-nss --without-gcrypt --enable-gost --enable-gost2012 --enable-legacy-features
+    steps:
+    - name: install dependencies
+      run: |
+          sudo apt update
+          sudo apt install automake autoconf libtool libtool-bin libltdl-dev libltdl7
+          sudo apt install libxml2 libxml2-dev libxslt1.1 libxslt1-dev
+          sudo apt install libssl3 libssl-dev libnspr4 libnspr4-dev libnss3 libnss3-dev libnss3-tools libgcrypt20 libgcrypt20-dev libgnutls28-dev
+    - uses: actions/checkout@v2
+    - name: create-build-dirs
+      run: |
+          mkdir build.dir install.dir
+    - name: configure
+      working-directory: build.dir
+      run: |
+          ../autogen.sh --prefix=${GITHUB_WORKSPACE}/install.dir --enable-werror --enable-pedantic ${{ matrix.config_flags }}
+    - name: make
+      working-directory: build.dir
+      run: |
+          make
+    - name: make check
+      working-directory: build.dir
+      run: |
+          make check
+    - name: make install
+      working-directory: build.dir
+      run: |
+          make install
+
+  # linux: check AWS-LC
+  check-ubuntu_aws_lc-s390x:
+    runs-on: ubuntu-24.04-s390x
     strategy:
       fail-fast: false
       matrix:
