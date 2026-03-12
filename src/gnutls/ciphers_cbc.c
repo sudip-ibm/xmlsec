@@ -28,7 +28,7 @@
 #include <xmlsec/gnutls/crypto.h>
 
 #include "../cast_helpers.h"
-#include "../kw_aes_des.h"
+#include "../kw_helpers.h"
 
 #define XMLSEC_GNUTLS_CBC_CIPHER_MAX_BLOCK_SIZE             32
 #define XMLSEC_GNUTLS_CBC_CIPHER_MAX_IV_SIZE                32
@@ -381,6 +381,15 @@ xmlSecGnuTLSCbcCipherCheckId(xmlSecTransformPtr transform) {
     }
 #endif /* XMLSEC_NO_AES */
 
+#ifndef XMLSEC_NO_CAMELLIA
+    if(xmlSecTransformCheckId(transform, xmlSecGnuTLSTransformCamellia128CbcId) ||
+       xmlSecTransformCheckId(transform, xmlSecGnuTLSTransformCamellia192CbcId) ||
+       xmlSecTransformCheckId(transform, xmlSecGnuTLSTransformCamellia256CbcId) )
+    {
+       return(1);
+    }
+#endif /* XMLSEC_NO_CAMELLIA */
+
     return(0);
 }
 
@@ -408,17 +417,33 @@ xmlSecGnuTLSCbcCipherInitialize(xmlSecTransformPtr transform) {
     if(transform->id == xmlSecGnuTLSTransformAes128CbcId) {
         ctx->keyId      = xmlSecGnuTLSKeyDataAesId;
         ctx->algorithm  = GNUTLS_CIPHER_AES_128_CBC;
-        ctx->keySize    = XMLSEC_KW_AES128_KEY_SIZE;
+        ctx->keySize    = XMLSEC_BINARY_KEY_BYTES_SIZE_128;
     } else if(transform->id == xmlSecGnuTLSTransformAes192CbcId) {
         ctx->keyId      = xmlSecGnuTLSKeyDataAesId;
         ctx->algorithm  = GNUTLS_CIPHER_AES_192_CBC;
-        ctx->keySize    = XMLSEC_KW_AES192_KEY_SIZE;
+        ctx->keySize    = XMLSEC_BINARY_KEY_BYTES_SIZE_192;
     } else if(transform->id == xmlSecGnuTLSTransformAes256CbcId) {
         ctx->keyId      = xmlSecGnuTLSKeyDataAesId;
         ctx->algorithm  = GNUTLS_CIPHER_AES_256_CBC;
-        ctx->keySize    = XMLSEC_KW_AES256_KEY_SIZE;
+        ctx->keySize    = XMLSEC_BINARY_KEY_BYTES_SIZE_256;
     } else
 #endif /* XMLSEC_NO_AES */
+
+#ifndef XMLSEC_NO_CAMELLIA
+    if(transform->id == xmlSecGnuTLSTransformCamellia128CbcId) {
+        ctx->keyId      = xmlSecGnuTLSKeyDataCamelliaId;
+        ctx->algorithm  = GNUTLS_CIPHER_CAMELLIA_128_CBC;
+        ctx->keySize    = XMLSEC_BINARY_KEY_BYTES_SIZE_128;
+    } else if(transform->id == xmlSecGnuTLSTransformCamellia192CbcId) {
+        ctx->keyId      = xmlSecGnuTLSKeyDataCamelliaId;
+        ctx->algorithm  = GNUTLS_CIPHER_CAMELLIA_192_CBC;
+        ctx->keySize    = XMLSEC_BINARY_KEY_BYTES_SIZE_192;
+    } else if(transform->id == xmlSecGnuTLSTransformCamellia256CbcId) {
+        ctx->keyId      = xmlSecGnuTLSKeyDataCamelliaId;
+        ctx->algorithm  = GNUTLS_CIPHER_CAMELLIA_256_CBC;
+        ctx->keySize    = XMLSEC_BINARY_KEY_BYTES_SIZE_256;
+    } else
+#endif /* XMLSEC_NO_CAMELLIA */
 
     if(1) {
         xmlSecInvalidTransfromError(transform)
@@ -609,38 +634,38 @@ xmlSecGnuTLSCbcCipherExecute(xmlSecTransformPtr transform, int last, xmlSecTrans
 }
 
 
+/* Helper macro to define CBC cipher transform klass */
+#define XMLSEC_GNUTLS_CBC_CIPHER_KLASS(name)                                                            \
+static xmlSecTransformKlass xmlSecGnuTLS ## name ## Klass = {                                          \
+    sizeof(xmlSecTransformKlass),               /* xmlSecSize klassSize */                              \
+    xmlSecGnuTLSCbcCipherSize,                  /* xmlSecSize objSize */                               \
+    xmlSecName ## name,                         /* const xmlChar* name; */                              \
+    xmlSecHref ## name,                         /* const xmlChar* href; */                              \
+    xmlSecTransformUsageEncryptionMethod,       /* xmlSecAlgorithmUsage usage; */                       \
+    xmlSecGnuTLSCbcCipherInitialize,            /* xmlSecTransformInitializeMethod initialize; */       \
+    xmlSecGnuTLSCbcCipherFinalize,              /* xmlSecTransformFinalizeMethod finalize; */           \
+    NULL,                                       /* xmlSecTransformNodeReadMethod readNode; */           \
+    NULL,                                       /* xmlSecTransformNodeWriteMethod writeNode; */         \
+    xmlSecGnuTLSCbcCipherSetKeyReq,             /* xmlSecTransformSetKeyReqMethod setKeyReq; */         \
+    xmlSecGnuTLSCbcCipherSetKey,                /* xmlSecTransformSetKeyMethod setKey; */               \
+    NULL,                                       /* xmlSecTransformValidateMethod validate; */           \
+    xmlSecTransformDefaultGetDataType,          /* xmlSecTransformGetDataTypeMethod getDataType; */     \
+    xmlSecTransformDefaultPushBin,              /* xmlSecTransformPushBinMethod pushBin; */             \
+    xmlSecTransformDefaultPopBin,               /* xmlSecTransformPopBinMethod popBin; */               \
+    NULL,                                       /* xmlSecTransformPushXmlMethod pushXml; */             \
+    NULL,                                       /* xmlSecTransformPopXmlMethod popXml; */               \
+    xmlSecGnuTLSCbcCipherExecute,               /* xmlSecTransformExecuteMethod execute; */             \
+    NULL,                                       /* void* reserved0; */                                  \
+    NULL,                                       /* void* reserved1; */                                  \
+};
+
 #ifndef XMLSEC_NO_AES
 /*********************************************************************
  *
  * AES CBC cipher transforms
  *
  ********************************************************************/
-static xmlSecTransformKlass xmlSecGnuTLSAes128CbcKlass = {
-    /* klass/object sizes */
-    sizeof(xmlSecTransformKlass),               /* xmlSecSize klassSize */
-    xmlSecGnuTLSCbcCipherSize,                  /* xmlSecSize objSize */
-
-    xmlSecNameAes128Cbc,                        /* const xmlChar* name; */
-    xmlSecHrefAes128Cbc,                        /* const xmlChar* href; */
-    xmlSecTransformUsageEncryptionMethod,       /* xmlSecAlgorithmUsage usage; */
-
-    xmlSecGnuTLSCbcCipherInitialize,            /* xmlSecTransformInitializeMethod initialize; */
-    xmlSecGnuTLSCbcCipherFinalize,              /* xmlSecTransformFinalizeMethod finalize; */
-    NULL,                                       /* xmlSecTransformNodeReadMethod readNode; */
-    NULL,                                       /* xmlSecTransformNodeWriteMethod writeNode; */
-    xmlSecGnuTLSCbcCipherSetKeyReq,             /* xmlSecTransformSetKeyMethod setKeyReq; */
-    xmlSecGnuTLSCbcCipherSetKey,                /* xmlSecTransformSetKeyMethod setKey; */
-    NULL,                                       /* xmlSecTransformValidateMethod validate; */
-    xmlSecTransformDefaultGetDataType,          /* xmlSecTransformGetDataTypeMethod getDataType; */
-    xmlSecTransformDefaultPushBin,              /* xmlSecTransformPushBinMethod pushBin; */
-    xmlSecTransformDefaultPopBin,               /* xmlSecTransformPopBinMethod popBin; */
-    NULL,                                       /* xmlSecTransformPushXmlMethod pushXml; */
-    NULL,                                       /* xmlSecTransformPopXmlMethod popXml; */
-    xmlSecGnuTLSCbcCipherExecute,               /* xmlSecTransformExecuteMethod execute; */
-
-    NULL,                                       /* void* reserved0; */
-    NULL,                                       /* void* reserved1; */
-};
+XMLSEC_GNUTLS_CBC_CIPHER_KLASS(Aes128Cbc)
 
 /**
  * xmlSecGnuTLSTransformAes128CbcGetKlass:
@@ -654,32 +679,7 @@ xmlSecGnuTLSTransformAes128CbcGetKlass(void) {
     return(&xmlSecGnuTLSAes128CbcKlass);
 }
 
-static xmlSecTransformKlass xmlSecGnuTLSAes192CbcKlass = {
-    /* klass/object sizes */
-    sizeof(xmlSecTransformKlass),               /* xmlSecSize klassSize */
-    xmlSecGnuTLSCbcCipherSize,                  /* xmlSecSize objSize */
-
-    xmlSecNameAes192Cbc,                        /* const xmlChar* name; */
-    xmlSecHrefAes192Cbc,                        /* const xmlChar* href; */
-    xmlSecTransformUsageEncryptionMethod,       /* xmlSecAlgorithmUsage usage; */
-
-    xmlSecGnuTLSCbcCipherInitialize,            /* xmlSecTransformInitializeMethod initialize; */
-    xmlSecGnuTLSCbcCipherFinalize,              /* xmlSecTransformFinalizeMethod finalize; */
-    NULL,                                       /* xmlSecTransformNodeReadMethod readNode; */
-    NULL,                                       /* xmlSecTransformNodeWriteMethod writeNode; */
-    xmlSecGnuTLSCbcCipherSetKeyReq,             /* xmlSecTransformSetKeyMethod setKeyReq; */
-    xmlSecGnuTLSCbcCipherSetKey,                /* xmlSecTransformSetKeyMethod setKey; */
-    NULL,                                       /* xmlSecTransformValidateMethod validate; */
-    xmlSecTransformDefaultGetDataType,          /* xmlSecTransformGetDataTypeMethod getDataType; */
-    xmlSecTransformDefaultPushBin,              /* xmlSecTransformPushBinMethod pushBin; */
-    xmlSecTransformDefaultPopBin,               /* xmlSecTransformPopBinMethod popBin; */
-    NULL,                                       /* xmlSecTransformPushXmlMethod pushXml; */
-    NULL,                                       /* xmlSecTransformPopXmlMethod popXml; */
-    xmlSecGnuTLSCbcCipherExecute,               /* xmlSecTransformExecuteMethod execute; */
-
-    NULL,                                       /* void* reserved0; */
-    NULL,                                       /* void* reserved1; */
-};
+XMLSEC_GNUTLS_CBC_CIPHER_KLASS(Aes192Cbc)
 
 /**
  * xmlSecGnuTLSTransformAes192CbcGetKlass:
@@ -693,32 +693,7 @@ xmlSecGnuTLSTransformAes192CbcGetKlass(void) {
     return(&xmlSecGnuTLSAes192CbcKlass);
 }
 
-static xmlSecTransformKlass xmlSecGnuTLSAes256CbcKlass = {
-    /* klass/object sizes */
-    sizeof(xmlSecTransformKlass),               /* xmlSecSize klassSize */
-    xmlSecGnuTLSCbcCipherSize,                  /* xmlSecSize objSize */
-
-    xmlSecNameAes256Cbc,                        /* const xmlChar* name; */
-    xmlSecHrefAes256Cbc,                        /* const xmlChar* href; */
-    xmlSecTransformUsageEncryptionMethod,       /* xmlSecAlgorithmUsage usage; */
-
-    xmlSecGnuTLSCbcCipherInitialize,            /* xmlSecTransformInitializeMethod initialize; */
-    xmlSecGnuTLSCbcCipherFinalize,              /* xmlSecTransformFinalizeMethod finalize; */
-    NULL,                                       /* xmlSecTransformNodeReadMethod readNode; */
-    NULL,                                       /* xmlSecTransformNodeWriteMethod writeNode; */
-    xmlSecGnuTLSCbcCipherSetKeyReq,             /* xmlSecTransformSetKeyMethod setKeyReq; */
-    xmlSecGnuTLSCbcCipherSetKey,                /* xmlSecTransformSetKeyMethod setKey; */
-    NULL,                                       /* xmlSecTransformValidateMethod validate; */
-    xmlSecTransformDefaultGetDataType,          /* xmlSecTransformGetDataTypeMethod getDataType; */
-    xmlSecTransformDefaultPushBin,              /* xmlSecTransformPushBinMethod pushBin; */
-    xmlSecTransformDefaultPopBin,               /* xmlSecTransformPopBinMethod popBin; */
-    NULL,                                       /* xmlSecTransformPushXmlMethod pushXml; */
-    NULL,                                       /* xmlSecTransformPopXmlMethod popXml; */
-    xmlSecGnuTLSCbcCipherExecute,               /* xmlSecTransformExecuteMethod execute; */
-
-    NULL,                                       /* void* reserved0; */
-    NULL,                                       /* void* reserved1; */
-};
+XMLSEC_GNUTLS_CBC_CIPHER_KLASS(Aes256Cbc)
 
 /**
  * xmlSecGnuTLSTransformAes256CbcGetKlass:
@@ -734,33 +709,58 @@ xmlSecGnuTLSTransformAes256CbcGetKlass(void) {
 
 #endif /* XMLSEC_NO_AES */
 
+#ifndef XMLSEC_NO_CAMELLIA
+/*********************************************************************
+ *
+ * Camellia CBC cipher transforms
+ *
+ ********************************************************************/
+XMLSEC_GNUTLS_CBC_CIPHER_KLASS(Camellia128Cbc)
+
+/**
+ * xmlSecGnuTLSTransformCamellia128CbcGetKlass:
+ *
+ * Camellia 128 CBC encryption transform klass.
+ *
+ * Returns: pointer to Camellia 128 CBC encryption transform.
+ */
+xmlSecTransformId
+xmlSecGnuTLSTransformCamellia128CbcGetKlass(void) {
+    return(&xmlSecGnuTLSCamellia128CbcKlass);
+}
+
+XMLSEC_GNUTLS_CBC_CIPHER_KLASS(Camellia192Cbc)
+
+/**
+ * xmlSecGnuTLSTransformCamellia192CbcGetKlass:
+ *
+ * Camellia 192 CBC encryption transform klass.
+ *
+ * Returns: pointer to Camellia 192 CBC encryption transform.
+ */
+xmlSecTransformId
+xmlSecGnuTLSTransformCamellia192CbcGetKlass(void) {
+    return(&xmlSecGnuTLSCamellia192CbcKlass);
+}
+
+XMLSEC_GNUTLS_CBC_CIPHER_KLASS(Camellia256Cbc)
+
+/**
+ * xmlSecGnuTLSTransformCamellia256CbcGetKlass:
+ *
+ * Camellia 256 CBC encryption transform klass.
+ *
+ * Returns: pointer to Camellia 256 CBC encryption transform.
+ */
+xmlSecTransformId
+xmlSecGnuTLSTransformCamellia256CbcGetKlass(void) {
+    return(&xmlSecGnuTLSCamellia256CbcKlass);
+}
+
+#endif /* XMLSEC_NO_CAMELLIA */
+
 #ifndef XMLSEC_NO_DES
-static xmlSecTransformKlass xmlSecGnuTLSDes3CbcKlass = {
-    /* klass/object sizes */
-    sizeof(xmlSecTransformKlass),               /* xmlSecSize klassSize */
-    xmlSecGnuTLSCbcCipherSize,                  /* xmlSecSize objSize */
-
-    xmlSecNameDes3Cbc,                          /* const xmlChar* name; */
-    xmlSecHrefDes3Cbc,                          /* const xmlChar* href; */
-    xmlSecTransformUsageEncryptionMethod,       /* xmlSecAlgorithmUsage usage; */
-
-    xmlSecGnuTLSCbcCipherInitialize,            /* xmlSecTransformInitializeMethod initialize; */
-    xmlSecGnuTLSCbcCipherFinalize,              /* xmlSecTransformFinalizeMethod finalize; */
-    NULL,                                       /* xmlSecTransformNodeReadMethod readNode; */
-    NULL,                                       /* xmlSecTransformNodeWriteMethod writeNode; */
-    xmlSecGnuTLSCbcCipherSetKeyReq,             /* xmlSecTransformSetKeyMethod setKeyReq; */
-    xmlSecGnuTLSCbcCipherSetKey,                /* xmlSecTransformSetKeyMethod setKey; */
-    NULL,                                       /* xmlSecTransformValidateMethod validate; */
-    xmlSecTransformDefaultGetDataType,          /* xmlSecTransformGetDataTypeMethod getDataType; */
-    xmlSecTransformDefaultPushBin,              /* xmlSecTransformPushBinMethod pushBin; */
-    xmlSecTransformDefaultPopBin,               /* xmlSecTransformPopBinMethod popBin; */
-    NULL,                                       /* xmlSecTransformPushXmlMethod pushXml; */
-    NULL,                                       /* xmlSecTransformPopXmlMethod popXml; */
-    xmlSecGnuTLSCbcCipherExecute,               /* xmlSecTransformExecuteMethod execute; */
-
-    NULL,                                       /* void* reserved0; */
-    NULL,                                       /* void* reserved1; */
-};
+XMLSEC_GNUTLS_CBC_CIPHER_KLASS(Des3Cbc)
 
 /**
  * xmlSecGnuTLSTransformDes3CbcGetKlass:

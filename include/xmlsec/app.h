@@ -116,6 +116,13 @@ XMLSEC_EXPORT xmlSecKeyDataId                   xmlSecKeyDataGostR3410_2012_512G
 #define xmlSecKeyDataHmacId                     xmlSecKeyDataHmacGetKlass()
 XMLSEC_EXPORT xmlSecKeyDataId                   xmlSecKeyDataHmacGetKlass(void);
 /**
+ * xmlSecKeyDataHkdfId:
+ *
+ * The HKDF key klass.
+ */
+#define xmlSecKeyDataHkdfId                     xmlSecKeyDataHkdfGetKlass()
+XMLSEC_EXPORT xmlSecKeyDataId                   xmlSecKeyDataHkdfGetKlass(void);
+/**
  * xmlSecKeyDataMLDSAId:
  *
  * The ML-DSA key klass.
@@ -143,6 +150,20 @@ XMLSEC_EXPORT xmlSecKeyDataId                   xmlSecKeyDataRsaGetKlass(void);
  */
 #define xmlSecKeyDataSLHDSAId                   xmlSecKeyDataSLHDSAGetKlass()
 XMLSEC_EXPORT xmlSecKeyDataId                   xmlSecKeyDataSLHDSAGetKlass(void);
+/**
+ * xmlSecKeyDataEdDSAId:
+ *
+ * The EdDSA key klass.
+ */
+#define xmlSecKeyDataEdDSAId                    xmlSecKeyDataEdDSAGetKlass()
+XMLSEC_EXPORT xmlSecKeyDataId                   xmlSecKeyDataEdDSAGetKlass(void);
+/**
+ * xmlSecKeyDataXdhId:
+ *
+ * The XDH key klass.
+ */
+#define xmlSecKeyDataXdhId                      xmlSecKeyDataXdhGetKlass()
+XMLSEC_EXPORT xmlSecKeyDataId                   xmlSecKeyDataXdhGetKlass(void);
 /**
  * xmlSecKeyDataX509Id:
  *
@@ -278,6 +299,13 @@ XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformKWDes3GetKlass(vo
 #define xmlSecTransformDhEsId                   xmlSecTransformDhEsGetKlass()
 XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformDhEsGetKlass(void);
 /**
+* xmlSecTransformHkdfId:
+*
+* The HKDF key derivation transform klass.
+*/
+#define xmlSecTransformHkdfId                   xmlSecTransformHkdfGetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformHkdfGetKlass(void);
+/**
  * xmlSecTransformDsaSha1Id:
  *
  * The DSA-SHA1 signature transform klass.
@@ -298,6 +326,20 @@ XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformDsaSha256GetKlass
 */
 #define xmlSecTransformEcdhId                   xmlSecTransformEcdhGetKlass()
 XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformEcdhGetKlass(void);
+/**
+ * xmlSecTransformX25519Id:
+ *
+ * The X25519 key agreement transform klass.
+ */
+#define xmlSecTransformX25519Id                 xmlSecTransformX25519GetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformX25519GetKlass(void);
+/**
+ * xmlSecTransformX448Id:
+ *
+ * The X448 key agreement transform klass.
+ */
+#define xmlSecTransformX448Id                   xmlSecTransformX448GetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformX448GetKlass(void);
 /**
  * xmlSecTransformEcdsaSha1Id:
  *
@@ -667,6 +709,41 @@ XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformSLHDSA_SHA2_256fG
 #define xmlSecTransformSLHDSA_SHA2_256s_Id      xmlSecTransformSLHDSA_SHA2_256sGetKlass()
 XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformSLHDSA_SHA2_256sGetKlass(void);
 
+/**
+ * xmlSecTransformEdDSAEd25519Id:
+ *
+ * The EdDSA-Ed25519 signature transform klass.
+ */
+#define xmlSecTransformEdDSAEd25519Id           xmlSecTransformEdDSAEd25519GetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformEdDSAEd25519GetKlass(void);
+/**
+ * xmlSecTransformEdDSAEd25519ctxId:
+ *
+ * The EdDSA-Ed25519ctx signature transform klass.
+ */
+#define xmlSecTransformEdDSAEd25519ctxId        xmlSecTransformEdDSAEd25519ctxGetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformEdDSAEd25519ctxGetKlass(void);
+/**
+ * xmlSecTransformEdDSAEd25519phId:
+ *
+ * The EdDSA-Ed25519ph signature transform klass.
+ */
+#define xmlSecTransformEdDSAEd25519phId         xmlSecTransformEdDSAEd25519phGetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformEdDSAEd25519phGetKlass(void);
+/**
+ * xmlSecTransformEdDSAEd448Id:
+ *
+ * The EdDSA-Ed448 signature transform klass.
+ */
+#define xmlSecTransformEdDSAEd448Id             xmlSecTransformEdDSAEd448GetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformEdDSAEd448GetKlass(void);
+/**
+ * xmlSecTransformEdDSAEd448phId:
+ *
+ * The EdDSA-Ed448ph signature transform klass.
+ */
+#define xmlSecTransformEdDSAEd448phId           xmlSecTransformEdDSAEd448phGetKlass()
+XMLSEC_EXPORT xmlSecTransformId                 xmlSecTransformEdDSAEd448phGetKlass(void);
 
 
 /**
@@ -792,6 +869,10 @@ XMLSEC_EXPORT int                               xmlSecCryptoAppKeysMngrCrlLoadMe
                                                                                  const xmlSecByte* data,
                                                                                  xmlSecSize dataSize,
                                                                                  xmlSecKeyDataFormat format);
+XMLSEC_EXPORT int                               xmlSecCryptoAppKeysMngrCrlLoadAndVerify(xmlSecKeysMngrPtr mngr,
+                                                                                 const char *filename,
+                                                                                 xmlSecKeyDataFormat format,
+                                                                                 xmlSecKeyInfoCtxPtr keyInfoCtx);
 XMLSEC_EXPORT xmlSecKeyPtr                      xmlSecCryptoAppKeyLoadEx        (const char *filename,
                                                                                  xmlSecKeyDataType type,
                                                                                  xmlSecKeyDataFormat format,

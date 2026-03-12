@@ -29,7 +29,7 @@
 
 #include "private.h"
 
-#include "../kw_aes_des.h"
+#include "../kw_helpers.h"
 #include "../cast_helpers.h"
 
 /*********************************************************************
@@ -535,6 +535,7 @@ xmlSecMSCryptoKWDes3BlockDecrypt(xmlSecTransformPtr transform,
         TRUE,
         &cryptKey))  {
 
+        xmlSecInternalError("xmlSecMSCryptoImportPlainSessionBlob", NULL);
         goto done;
     }
     xmlSecAssert2(cryptKey != 0, -1);
@@ -565,7 +566,7 @@ xmlSecMSCryptoKWDes3BlockDecrypt(xmlSecTransformPtr transform,
 
     XMLSEC_SAFE_CAST_SIZE_TO_ULONG(inSize, dwCLen, goto done, NULL);
     if(!CryptDecrypt(cryptKey, 0, FALSE, 0, out, &dwCLen)) {
-        xmlSecMSCryptoError("CryptEncrypt", NULL);
+        xmlSecMSCryptoError("CryptDecrypt", NULL);
         goto done;
     }
 

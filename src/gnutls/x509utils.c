@@ -42,6 +42,7 @@
 
 #include "private.h"
 #include "../cast_helpers.h"
+#include "../x509_helpers.h"
 
 /**************************************************************************
  *
@@ -308,9 +309,9 @@ xmlSecGnuTLSX509CertGetIssuerSerial(gnutls_x509_crt_t cert) {
     }
 
     /* convert to string */
-    res = xmlSecGnuTLSASN1IntegerWrite(buf, bufSize);
+    res = xmlSecX509SerialNumberWrite((const xmlSecByte*)buf, (xmlSecSize)bufSize);
     if(res == NULL) {
-        xmlSecInternalError("xmlSecGnuTLSASN1IntegerWrite", NULL);
+        xmlSecInternalError("xmlSecX509SerialNumberWrite", NULL);
         xmlFree(buf);
         return(NULL);
     }
@@ -933,7 +934,7 @@ xmlSecGnuTLSX509CrlDerWrite(gnutls_x509_crl_t crl, xmlSecBufferPtr buf) {
     /* get size */
     err = gnutls_x509_crl_export(crl, GNUTLS_X509_FMT_DER, NULL, &bufSizeT);
     if((err != GNUTLS_E_SHORT_MEMORY_BUFFER) || (bufSizeT <= 0)) {
-        xmlSecGnuTLSError("ggnutls_x509_crl_export(GNUTLS_X509_FMT_DER)", err, NULL);
+        xmlSecGnuTLSError("gnutls_x509_crl_export(GNUTLS_X509_FMT_DER)", err, NULL);
         return(-1);
     }
     XMLSEC_SAFE_CAST_SIZE_T_TO_SIZE(bufSizeT, bufSize, return(-1), NULL);
@@ -951,7 +952,7 @@ xmlSecGnuTLSX509CrlDerWrite(gnutls_x509_crl_t crl, xmlSecBufferPtr buf) {
     /* write it out */
     err = gnutls_x509_crl_export(crl,GNUTLS_X509_FMT_DER, bufData, &bufSizeT);
     if(err != GNUTLS_E_SUCCESS) {
-        xmlSecGnuTLSError("ggnutls_x509_crl_export(GNUTLS_X509_FMT_DER)", err, NULL);
+        xmlSecGnuTLSError("gnutls_x509_crl_export(GNUTLS_X509_FMT_DER)", err, NULL);
         return(-1);
     }
 
@@ -989,44 +990,6 @@ xmlSecGnuTLSX509CrlDebugXmlDump(gnutls_x509_crl_t crl, FILE* output) {
     } else {
         fprintf(output, "<IssuerName>unknown</IssuerName>\n");
     }
-}
-
-/*************************************************************************
- *
- * Misc. utils/helpers
- *
- ************************************************************************/
-#define XMLSEC_GNUTLS_INT_TO_STR_MAX_SIZE 64
-xmlChar*
-xmlSecGnuTLSASN1IntegerWrite(const unsigned char * data, size_t len) {
-    xmlChar *res = NULL;
-    unsigned long long int val = 0;
-    size_t ii = 0;
-    int shift = 0;
-    int ret;
-
-    xmlSecAssert2(data != NULL, NULL);
-    xmlSecAssert2(len <= 9, NULL);
-
-    /* HACK : to be fixed after GnuTLS provides a way to read opaque ASN1 integer */
-    for(ii = len; ii > 0; --ii, shift += 8) {
-        val |= ((unsigned long long)data[ii - 1]) << shift;
-    }
-
-    res = (xmlChar*)xmlMalloc(XMLSEC_GNUTLS_INT_TO_STR_MAX_SIZE + 1);
-    if(res == NULL) {
-        xmlSecMallocError(XMLSEC_GNUTLS_INT_TO_STR_MAX_SIZE + 1, NULL);
-        return(NULL);
-    }
-
-    ret = xmlStrPrintf(res, XMLSEC_GNUTLS_INT_TO_STR_MAX_SIZE, "%llu", val);
-    if(ret < 0) {
-        xmlSecXmlError("xmlStrPrintf", NULL);
-        xmlFree(res);
-        return(NULL);
-    }
-
-    return(res);
 }
 
 /*************************************************************************
@@ -1149,8 +1112,6 @@ xmlSecGnuTLSPkcs12LoadMemory(const xmlSecByte* data, xmlSecSize dataSize, const 
                         xmlSecGnuTLSError("gnutls_x509_privkey_init", err, NULL);
                         goto done;
                     }
-
-                    fprintf(stderr, "DEBUG: Importing private key from PKCS#12 bag type %d, pwd %s\n", bag_type, pwd);
 
                     err = gnutls_x509_privkey_import_pkcs8((*priv_key),
                                 &datum, GNUTLS_X509_FMT_DER,

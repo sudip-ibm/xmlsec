@@ -189,6 +189,18 @@ xmlSecNssSymKeyDataKlassCheck(xmlSecKeyDataKlass* klass) {
     }
 #endif /* XMLSEC_NO_AES */
 
+#ifndef XMLSEC_NO_CAMELLIA
+    if(klass == xmlSecNssKeyDataCamelliaId) {
+        return(1);
+    }
+#endif /* XMLSEC_NO_CAMELLIA */
+
+#ifndef XMLSEC_NO_CHACHA20
+    if(klass == xmlSecNssKeyDataChaCha20Id) {
+        return(1);
+    }
+#endif /* XMLSEC_NO_CHACHA20 */
+
 #ifndef XMLSEC_NO_HMAC
     if(klass == xmlSecNssKeyDataHmacId) {
         return(1);
@@ -201,8 +213,63 @@ xmlSecNssSymKeyDataKlassCheck(xmlSecKeyDataKlass* klass) {
     }
 #endif /* XMLSEC_NO_PBKDF2 */
 
+#ifndef XMLSEC_NO_CONCATKDF
+    if(klass == xmlSecNssKeyDataConcatKdfId) {
+        return(1);
+    }
+#endif /* XMLSEC_NO_CONCATKDF */
+
+#ifndef XMLSEC_NO_HKDF
+    if(klass == xmlSecNssKeyDataHkdfId) {
+        return(1);
+    }
+#endif /* XMLSEC_NO_HKDF */
+
     return(0);
 }
+
+/*****************************************************************************
+ *
+ * Symmetic keys Klasses
+ *
+ ****************************************************************************/
+#define XMLSEC_NSS_SYMKEY_KLASS_EX(name, keyName, keyHref, keyNodeName, keyNodeNs)                      \
+static xmlSecKeyDataKlass xmlSecNss ## name ## Klass = {                                                 \
+    sizeof(xmlSecKeyDataKlass),             /* xmlSecSize klassSize */                                   \
+    xmlSecKeyDataBinarySize,                /* xmlSecSize objSize */                                     \
+                                                                                                         \
+    /* data */                                                                                           \
+    keyName,                                /* const xmlChar* name; */                                   \
+    xmlSecKeyDataUsageReadFromFile | xmlSecKeyDataUsageKeyValueNode | xmlSecKeyDataUsageRetrievalMethodNodeXml, /* xmlSecKeyDataUsage usage; */ \
+    keyHref,                                /* const xmlChar* href; */                                   \
+    keyNodeName,                            /* const xmlChar* dataNodeName; */                           \
+    keyNodeNs,                              /* const xmlChar* dataNodeNs; */                             \
+                                                                                                         \
+    /* constructors/destructor */                                                                        \
+    xmlSecNssSymKeyDataInitialize,          /* xmlSecKeyDataInitializeMethod initialize; */              \
+    xmlSecNssSymKeyDataDuplicate,           /* xmlSecKeyDataDuplicateMethod duplicate; */                \
+    xmlSecNssSymKeyDataFinalize,            /* xmlSecKeyDataFinalizeMethod finalize; */                  \
+    xmlSecNssSymKeyDataGenerate,            /* xmlSecKeyDataGenerateMethod generate; */                  \
+                                                                                                         \
+    /* get info */                                                                                       \
+    xmlSecNssSymKeyDataGetType,             /* xmlSecKeyDataGetTypeMethod getType; */                    \
+    xmlSecNssSymKeyDataGetSize,             /* xmlSecKeyDataGetSizeMethod getSize; */                    \
+    NULL,                                   /* DEPRECATED xmlSecKeyDataGetIdentifier getIdentifier; */  \
+                                                                                                         \
+    /* read/write */                                                                                     \
+    xmlSecNssSymKeyDataXmlRead,             /* xmlSecKeyDataXmlReadMethod xmlRead; */                    \
+    xmlSecNssSymKeyDataXmlWrite,            /* xmlSecKeyDataXmlWriteMethod xmlWrite; */                  \
+    xmlSecNssSymKeyDataBinRead,             /* xmlSecKeyDataBinReadMethod binRead; */                    \
+    xmlSecNssSymKeyDataBinWrite,            /* xmlSecKeyDataBinWriteMethod binWrite; */                  \
+                                                                                                         \
+    /* debug */                                                                                          \
+    xmlSecNssSymKeyDataDebugDump,           /* xmlSecKeyDataDebugDumpMethod debugDump; */                \
+    xmlSecNssSymKeyDataDebugXmlDump,        /* xmlSecKeyDataDebugDumpMethod debugXmlDump; */             \
+                                                                                                         \
+    /* reserved for the future */                                                                        \
+    NULL,                                   /* void* reserved0; */                                      \
+    NULL,                                   /* void* reserved1; */                                      \
+};
 
 #ifndef XMLSEC_NO_AES
 /**************************************************************************
@@ -210,43 +277,7 @@ xmlSecNssSymKeyDataKlassCheck(xmlSecKeyDataKlass* klass) {
  * <xmlsec:AESKeyValue> processing
  *
  *************************************************************************/
-static xmlSecKeyDataKlass xmlSecNssKeyDataAesKlass = {
-    sizeof(xmlSecKeyDataKlass),
-    xmlSecKeyDataBinarySize,
-
-    /* data */
-    xmlSecNameAESKeyValue,
-    xmlSecKeyDataUsageReadFromFile | xmlSecKeyDataUsageKeyValueNode | xmlSecKeyDataUsageRetrievalMethodNodeXml,
-                                                /* xmlSecKeyDataUsage usage; */
-    xmlSecHrefAESKeyValue,                      /* const xmlChar* href; */
-    xmlSecNodeAESKeyValue,                      /* const xmlChar* dataNodeName; */
-    xmlSecNs,                                   /* const xmlChar* dataNodeNs; */
-
-    /* constructors/destructor */
-    xmlSecNssSymKeyDataInitialize,              /* xmlSecKeyDataInitializeMethod initialize; */
-    xmlSecNssSymKeyDataDuplicate,               /* xmlSecKeyDataDuplicateMethod duplicate; */
-    xmlSecNssSymKeyDataFinalize,                /* xmlSecKeyDataFinalizeMethod finalize; */
-    xmlSecNssSymKeyDataGenerate,                /* xmlSecKeyDataGenerateMethod generate; */
-
-    /* get info */
-    xmlSecNssSymKeyDataGetType,                 /* xmlSecKeyDataGetTypeMethod getType; */
-    xmlSecNssSymKeyDataGetSize,         /* xmlSecKeyDataGetSizeMethod getSize; */
-    NULL,                                       /* DEPRECATED xmlSecKeyDataGetIdentifier getIdentifier; */
-
-    /* read/write */
-    xmlSecNssSymKeyDataXmlRead,         /* xmlSecKeyDataXmlReadMethod xmlRead; */
-    xmlSecNssSymKeyDataXmlWrite,                /* xmlSecKeyDataXmlWriteMethod xmlWrite; */
-    xmlSecNssSymKeyDataBinRead,         /* xmlSecKeyDataBinReadMethod binRead; */
-    xmlSecNssSymKeyDataBinWrite,                /* xmlSecKeyDataBinWriteMethod binWrite; */
-
-    /* debug */
-    xmlSecNssSymKeyDataDebugDump,               /* xmlSecKeyDataDebugDumpMethod debugDump; */
-    xmlSecNssSymKeyDataDebugXmlDump,    /* xmlSecKeyDataDebugDumpMethod debugXmlDump; */
-
-    /* reserved for the future */
-    NULL,                                       /* void* reserved0; */
-    NULL,                                       /* void* reserved1; */
-};
+XMLSEC_NSS_SYMKEY_KLASS_EX(KeyDataAes, xmlSecNameAESKeyValue, xmlSecHrefAESKeyValue, xmlSecNodeAESKeyValue, xmlSecNs)
 
 /**
  * xmlSecNssKeyDataAesGetKlass:
@@ -285,49 +316,58 @@ xmlSecNssKeyDataAesSet(xmlSecKeyDataPtr data, const xmlSecByte* buf, xmlSecSize 
 }
 #endif /* XMLSEC_NO_AES */
 
+#ifndef XMLSEC_NO_CAMELLIA
+/**************************************************************************
+ *
+ * <xmlsec:CamelliaKeyValue> processing
+ *
+ *************************************************************************/
+XMLSEC_NSS_SYMKEY_KLASS_EX(KeyDataCamellia, xmlSecNameCamelliaKeyValue, xmlSecHrefCamelliaKeyValue, xmlSecNodeCamelliaKeyValue, xmlSecNs)
+
+/**
+ * xmlSecNssKeyDataCamelliaGetKlass:
+ *
+ * The Camellia key data klass.
+ *
+ * Returns: Camellia key data klass.
+ */
+xmlSecKeyDataId
+xmlSecNssKeyDataCamelliaGetKlass(void) {
+    return(&xmlSecNssKeyDataCamelliaKlass);
+}
+
+/**
+ * xmlSecNssKeyDataCamelliaSet:
+ * @data:               the pointer to Camellia key data.
+ * @buf:                the pointer to key value.
+ * @bufSize:            the key value size (in bytes).
+ *
+ * Sets the value of Camellia key data.
+ *
+ * Returns: 0 on success or a negative value if an error occurs.
+ */
+int
+xmlSecNssKeyDataCamelliaSet(xmlSecKeyDataPtr data, const xmlSecByte* buf, xmlSecSize bufSize) {
+    xmlSecBufferPtr buffer;
+
+    xmlSecAssert2(xmlSecKeyDataCheckId(data, xmlSecNssKeyDataCamelliaId), -1);
+    xmlSecAssert2(buf != NULL, -1);
+    xmlSecAssert2(bufSize > 0, -1);
+
+    buffer = xmlSecKeyDataBinaryValueGetBuffer(data);
+    xmlSecAssert2(buffer != NULL, -1);
+
+    return(xmlSecBufferSetData(buffer, buf, bufSize));
+}
+#endif /* XMLSEC_NO_CAMELLIA */
+
 #ifndef XMLSEC_NO_DES
 /**************************************************************************
  *
  * <xmlsec:DESKeyValue> processing
  *
  *************************************************************************/
-static xmlSecKeyDataKlass xmlSecNssKeyDataDesKlass = {
-    sizeof(xmlSecKeyDataKlass),
-    xmlSecKeyDataBinarySize,
-
-    /* data */
-    xmlSecNameDESKeyValue,
-    xmlSecKeyDataUsageReadFromFile | xmlSecKeyDataUsageKeyValueNode | xmlSecKeyDataUsageRetrievalMethodNodeXml,
-                                                /* xmlSecKeyDataUsage usage; */
-    xmlSecHrefDESKeyValue,                      /* const xmlChar* href; */
-    xmlSecNodeDESKeyValue,                      /* const xmlChar* dataNodeName; */
-    xmlSecNs,                                   /* const xmlChar* dataNodeNs; */
-
-    /* constructors/destructor */
-    xmlSecNssSymKeyDataInitialize,              /* xmlSecKeyDataInitializeMethod initialize; */
-    xmlSecNssSymKeyDataDuplicate,               /* xmlSecKeyDataDuplicateMethod duplicate; */
-    xmlSecNssSymKeyDataFinalize,                /* xmlSecKeyDataFinalizeMethod finalize; */
-    xmlSecNssSymKeyDataGenerate,                /* xmlSecKeyDataGenerateMethod generate; */
-
-    /* get info */
-    xmlSecNssSymKeyDataGetType,                 /* xmlSecKeyDataGetTypeMethod getType; */
-    xmlSecNssSymKeyDataGetSize,         /* xmlSecKeyDataGetSizeMethod getSize; */
-    NULL,                                       /* DEPRECATED xmlSecKeyDataGetIdentifier getIdentifier; */
-
-    /* read/write */
-    xmlSecNssSymKeyDataXmlRead,         /* xmlSecKeyDataXmlReadMethod xmlRead; */
-    xmlSecNssSymKeyDataXmlWrite,                /* xmlSecKeyDataXmlWriteMethod xmlWrite; */
-    xmlSecNssSymKeyDataBinRead,         /* xmlSecKeyDataBinReadMethod binRead; */
-    xmlSecNssSymKeyDataBinWrite,                /* xmlSecKeyDataBinWriteMethod binWrite; */
-
-    /* debug */
-    xmlSecNssSymKeyDataDebugDump,               /* xmlSecKeyDataDebugDumpMethod debugDump; */
-    xmlSecNssSymKeyDataDebugXmlDump,    /* xmlSecKeyDataDebugDumpMethod debugXmlDump; */
-
-    /* reserved for the future */
-    NULL,                                       /* void* reserved0; */
-    NULL,                                       /* void* reserved1; */
-};
+XMLSEC_NSS_SYMKEY_KLASS_EX(KeyDataDes, xmlSecNameDESKeyValue, xmlSecHrefDESKeyValue, xmlSecNodeDESKeyValue, xmlSecNs)
 
 /**
  * xmlSecNssKeyDataDesGetKlass:
@@ -367,49 +407,59 @@ xmlSecNssKeyDataDesSet(xmlSecKeyDataPtr data, const xmlSecByte* buf, xmlSecSize 
 
 #endif /* XMLSEC_NO_DES */
 
+#ifndef XMLSEC_NO_CHACHA20
+/**************************************************************************
+ *
+ * <xmlsec:ChaCha20KeyValue> processing
+ *
+ *************************************************************************/
+XMLSEC_NSS_SYMKEY_KLASS_EX(KeyDataChaCha20, xmlSecNameChaCha20KeyValue, xmlSecHrefChaCha20KeyValue, xmlSecNodeChaCha20KeyValue, xmlSecNs)
+
+/**
+ * xmlSecNssKeyDataChaCha20GetKlass:
+ *
+ * The ChaCha20 key data klass.
+ *
+ * Returns: ChaCha20 key data klass.
+ */
+xmlSecKeyDataId
+xmlSecNssKeyDataChaCha20GetKlass(void) {
+    return(&xmlSecNssKeyDataChaCha20Klass);
+}
+
+/**
+ * xmlSecNssKeyDataChaCha20Set:
+ * @data:               the pointer to ChaCha20 key data.
+ * @buf:                the pointer to key value.
+ * @bufSize:            the key value size (in bytes).
+ *
+ * Sets the value of ChaCha20 key data.
+ *
+ * Returns: 0 on success or a negative value if an error occurs.
+ */
+int
+xmlSecNssKeyDataChaCha20Set(xmlSecKeyDataPtr data, const xmlSecByte* buf, xmlSecSize bufSize) {
+    xmlSecBufferPtr buffer;
+
+    xmlSecAssert2(xmlSecKeyDataCheckId(data, xmlSecNssKeyDataChaCha20Id), -1);
+    xmlSecAssert2(buf != NULL, -1);
+    xmlSecAssert2(bufSize > 0, -1);
+
+    buffer = xmlSecKeyDataBinaryValueGetBuffer(data);
+    xmlSecAssert2(buffer != NULL, -1);
+
+    return(xmlSecBufferSetData(buffer, buf, bufSize));
+}
+
+#endif /* XMLSEC_NO_CHACHA20 */
+
 #ifndef XMLSEC_NO_HMAC
 /**************************************************************************
  *
  * <xmlsec:HMACKeyValue> processing
  *
  *************************************************************************/
-static xmlSecKeyDataKlass xmlSecNssKeyDataHmacKlass = {
-    sizeof(xmlSecKeyDataKlass),
-    xmlSecKeyDataBinarySize,
-
-    /* data */
-    xmlSecNameHMACKeyValue,
-    xmlSecKeyDataUsageReadFromFile | xmlSecKeyDataUsageKeyValueNode | xmlSecKeyDataUsageRetrievalMethodNodeXml,
-                                                /* xmlSecKeyDataUsage usage; */
-    xmlSecHrefHMACKeyValue,                     /* const xmlChar* href; */
-    xmlSecNodeHMACKeyValue,                     /* const xmlChar* dataNodeName; */
-    xmlSecNs,                                   /* const xmlChar* dataNodeNs; */
-
-    /* constructors/destructor */
-    xmlSecNssSymKeyDataInitialize,              /* xmlSecKeyDataInitializeMethod initialize; */
-    xmlSecNssSymKeyDataDuplicate,               /* xmlSecKeyDataDuplicateMethod duplicate; */
-    xmlSecNssSymKeyDataFinalize,                /* xmlSecKeyDataFinalizeMethod finalize; */
-    xmlSecNssSymKeyDataGenerate,                /* xmlSecKeyDataGenerateMethod generate; */
-
-    /* get info */
-    xmlSecNssSymKeyDataGetType,                 /* xmlSecKeyDataGetTypeMethod getType; */
-    xmlSecNssSymKeyDataGetSize,         /* xmlSecKeyDataGetSizeMethod getSize; */
-    NULL,                                       /* DEPRECATED xmlSecKeyDataGetIdentifier getIdentifier; */
-
-    /* read/write */
-    xmlSecNssSymKeyDataXmlRead,         /* xmlSecKeyDataXmlReadMethod xmlRead; */
-    xmlSecNssSymKeyDataXmlWrite,                /* xmlSecKeyDataXmlWriteMethod xmlWrite; */
-    xmlSecNssSymKeyDataBinRead,         /* xmlSecKeyDataBinReadMethod binRead; */
-    xmlSecNssSymKeyDataBinWrite,                /* xmlSecKeyDataBinWriteMethod binWrite; */
-
-    /* debug */
-    xmlSecNssSymKeyDataDebugDump,               /* xmlSecKeyDataDebugDumpMethod debugDump; */
-    xmlSecNssSymKeyDataDebugXmlDump,    /* xmlSecKeyDataDebugDumpMethod debugXmlDump; */
-
-    /* reserved for the future */
-    NULL,                                       /* void* reserved0; */
-    NULL,                                       /* void* reserved1; */
-};
+XMLSEC_NSS_SYMKEY_KLASS_EX(KeyDataHmac, xmlSecNameHMACKeyValue, xmlSecHrefHMACKeyValue, xmlSecNodeHMACKeyValue, xmlSecNs)
 
 /**
  * xmlSecNssKeyDataHmacGetKlass:
@@ -455,43 +505,7 @@ xmlSecNssKeyDataHmacSet(xmlSecKeyDataPtr data, const xmlSecByte* buf, xmlSecSize
  * PBKDF2 key
  *
  *************************************************************************/
-static xmlSecKeyDataKlass xmlSecNssKeyDataPbkdf2Klass = {
-    sizeof(xmlSecKeyDataKlass),
-    xmlSecKeyDataBinarySize,
-
-    /* data */
-    xmlSecNamePbkdf2KeyValue,
-    xmlSecKeyDataUsageReadFromFile | xmlSecKeyDataUsageKeyValueNode | xmlSecKeyDataUsageRetrievalMethodNodeXml,
-                                    /* xmlSecKeyDataUsage usage; */
-    NULL,                           /* const xmlChar* href; */
-    NULL,                           /* const xmlChar* dataNodeName; */
-    NULL,                           /* const xmlChar* dataNodeNs; */
-
-    /* constructors/destructor */
-    xmlSecNssSymKeyDataInitialize,      /* xmlSecKeyDataInitializeMethod initialize; */
-    xmlSecNssSymKeyDataDuplicate,       /* xmlSecKeyDataDuplicateMethod duplicate; */
-    xmlSecNssSymKeyDataFinalize,        /* xmlSecKeyDataFinalizeMethod finalize; */
-    xmlSecNssSymKeyDataGenerate,        /* xmlSecKeyDataGenerateMethod generate; */
-
-    /* get info */
-    xmlSecNssSymKeyDataGetType,         /* xmlSecKeyDataGetTypeMethod getType; */
-    xmlSecNssSymKeyDataGetSize,         /* xmlSecKeyDataGetSizeMethod getSize; */
-    NULL,                               /* DEPRECATED xmlSecKeyDataGetIdentifier getIdentifier; */
-
-    /* read/write */
-    xmlSecNssSymKeyDataXmlRead,         /* xmlSecKeyDataXmlReadMethod xmlRead; */
-    xmlSecNssSymKeyDataXmlWrite,        /* xmlSecKeyDataXmlWriteMethod xmlWrite; */
-    xmlSecNssSymKeyDataBinRead,         /* xmlSecKeyDataBinReadMethod binRead; */
-    xmlSecNssSymKeyDataBinWrite,        /* xmlSecKeyDataBinWriteMethod binWrite; */
-
-    /* debug */
-    xmlSecNssSymKeyDataDebugDump,       /* xmlSecKeyDataDebugDumpMethod debugDump; */
-    xmlSecNssSymKeyDataDebugXmlDump,    /* xmlSecKeyDataDebugDumpMethod debugXmlDump; */
-
-    /* reserved for the future */
-    NULL,                               /* void* reserved0; */
-    NULL,                               /* void* reserved1; */
-};
+XMLSEC_NSS_SYMKEY_KLASS_EX(KeyDataPbkdf2, xmlSecNamePbkdf2Key, NULL, NULL, NULL)
 
 /**
  * xmlSecNssKeyDataPbkdf2GetKlass:
@@ -530,3 +544,95 @@ xmlSecNssKeyDataPbkdf2Set(xmlSecKeyDataPtr data, const xmlSecByte* buf, xmlSecSi
 }
 
 #endif /* XMLSEC_NO_PBKDF2 */
+
+#ifndef XMLSEC_NO_CONCATKDF
+/**************************************************************************
+ *
+ * ConcatKDF key
+ *
+ *************************************************************************/
+XMLSEC_NSS_SYMKEY_KLASS_EX(KeyDataConcatKdf, xmlSecNameConcatKdfKey, NULL, NULL, NULL)
+
+/**
+ * xmlSecNssKeyDataConcatKdfGetKlass:
+ *
+ * The ConcatKDF key data klass.
+ *
+ * Returns: ConcatKDF key data klass.
+ */
+xmlSecKeyDataId
+xmlSecNssKeyDataConcatKdfGetKlass(void) {
+    return(&xmlSecNssKeyDataConcatKdfKlass);
+}
+
+/**
+ * xmlSecNssKeyDataConcatKdfSet:
+ * @data:               the pointer to ConcatKDF key data.
+ * @buf:                the pointer to key value.
+ * @bufSize:            the key value size (in bytes).
+ *
+ * Sets the value of ConcatKDF key data.
+ *
+ * Returns: 0 on success or a negative value if an error occurs.
+ */
+int
+xmlSecNssKeyDataConcatKdfSet(xmlSecKeyDataPtr data, const xmlSecByte* buf, xmlSecSize bufSize) {
+    xmlSecBufferPtr buffer;
+
+    xmlSecAssert2(xmlSecKeyDataCheckId(data, xmlSecNssKeyDataConcatKdfId), -1);
+    xmlSecAssert2(buf != NULL, -1);
+    xmlSecAssert2(bufSize > 0, -1);
+
+    buffer = xmlSecKeyDataBinaryValueGetBuffer(data);
+    xmlSecAssert2(buffer != NULL, -1);
+
+    return(xmlSecBufferSetData(buffer, buf, bufSize));
+}
+
+#endif /* XMLSEC_NO_CONCATKDF */
+
+#ifndef XMLSEC_NO_HKDF
+/**************************************************************************
+ *
+ * HKDF key
+ *
+ *************************************************************************/
+XMLSEC_NSS_SYMKEY_KLASS_EX(KeyDataHkdf, xmlSecNameHkdfKey, NULL, NULL, NULL)
+
+/**
+ * xmlSecNssKeyDataHkdfGetKlass:
+ *
+ * The HKDF key data klass.
+ *
+ * Returns: HKDF key data klass.
+ */
+xmlSecKeyDataId
+xmlSecNssKeyDataHkdfGetKlass(void) {
+    return(&xmlSecNssKeyDataHkdfKlass);
+}
+
+/**
+ * xmlSecNssKeyDataHkdfSet:
+ * @data:               the pointer to HKDF key data.
+ * @buf:                the pointer to key value.
+ * @bufSize:            the key value size (in bytes).
+ *
+ * Sets the value of HKDF key data.
+ *
+ * Returns: 0 on success or a negative value if an error occurs.
+ */
+int
+xmlSecNssKeyDataHkdfSet(xmlSecKeyDataPtr data, const xmlSecByte* buf, xmlSecSize bufSize) {
+    xmlSecBufferPtr buffer;
+
+    xmlSecAssert2(xmlSecKeyDataCheckId(data, xmlSecNssKeyDataHkdfId), -1);
+    xmlSecAssert2(buf != NULL, -1);
+    xmlSecAssert2(bufSize > 0, -1);
+
+    buffer = xmlSecKeyDataBinaryValueGetBuffer(data);
+    xmlSecAssert2(buffer != NULL, -1);
+
+    return(xmlSecBufferSetData(buffer, buf, bufSize));
+}
+
+#endif /* XMLSEC_NO_HKDF */

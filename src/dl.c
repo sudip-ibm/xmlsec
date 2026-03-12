@@ -586,6 +586,8 @@ xmlSecCryptoDLFunctionsRegisterKeyDataAndTransforms(struct _xmlSecCryptoDLFuncti
      *
      ****************************************************************************/
     XMLSEC_REGISTER_KEY_DATA(Aes);                  // keyDataAesGetKlass
+    XMLSEC_REGISTER_KEY_DATA(Camellia);             // keyDataCamelliaGetKlass
+    XMLSEC_REGISTER_KEY_DATA(ChaCha20);             // keyDataChaCha20GetKlass
     XMLSEC_REGISTER_KEY_DATA(ConcatKdf);            // keyDataConcatKdfGetKlass
     XMLSEC_REGISTER_KEY_DATA(Des);                  // keyDataDesGetKlass
     XMLSEC_REGISTER_KEY_DATA(Dh);                   // keyDataDhGetKlass
@@ -595,10 +597,13 @@ xmlSecCryptoDLFunctionsRegisterKeyDataAndTransforms(struct _xmlSecCryptoDLFuncti
     XMLSEC_REGISTER_KEY_DATA(GostR3410_2012_256);   // keyDataGostR3410_2012_256GetKlass
     XMLSEC_REGISTER_KEY_DATA(GostR3410_2012_512);   // keyDataGetKlass
     XMLSEC_REGISTER_KEY_DATA(Hmac);                 // keyDataHmacGetKlass
+    XMLSEC_REGISTER_KEY_DATA(Hkdf);                 // keyDataHkdfGetKlass
     XMLSEC_REGISTER_KEY_DATA(MLDSA);                // keyDataMLDSAGetKlass
     XMLSEC_REGISTER_KEY_DATA(Pbkdf2);               // keyDataPbkdf2GetKlass
     XMLSEC_REGISTER_KEY_DATA(Rsa);                  // keyDataRsaGetKlass
     XMLSEC_REGISTER_KEY_DATA(SLHDSA);               // keyDataSLHDSAGetKlass
+    XMLSEC_REGISTER_KEY_DATA(EdDSA);                // keyDataEdDSAGetKlass
+    XMLSEC_REGISTER_KEY_DATA(Xdh);                  // keyDataXdhGetKlass
     XMLSEC_REGISTER_KEY_DATA(X509);                 // keyDataX509GetKlass
     XMLSEC_REGISTER_KEY_DATA(RawX509Cert);          // keyDataRawX509CertGetKlass
 
@@ -626,6 +631,17 @@ xmlSecCryptoDLFunctionsRegisterKeyDataAndTransforms(struct _xmlSecCryptoDLFuncti
     XMLSEC_REGISTER_TRANSFORM(KWAes192);                            // transformKWAes192GetKlass
     XMLSEC_REGISTER_TRANSFORM(KWAes256);                            // transformKWAes256GetKlass
 
+    XMLSEC_REGISTER_TRANSFORM(Camellia128Cbc);                      // transformCamellia128CbcGetKlass
+    XMLSEC_REGISTER_TRANSFORM(Camellia192Cbc);                      // transformCamellia192CbcGetKlass
+    XMLSEC_REGISTER_TRANSFORM(Camellia256Cbc);                      // transformCamellia256CbcGetKlass
+
+    XMLSEC_REGISTER_TRANSFORM(KWCamellia128);                       // transformKWCamellia128GetKlass
+    XMLSEC_REGISTER_TRANSFORM(KWCamellia192);                       // transformKWCamellia192GetKlass
+    XMLSEC_REGISTER_TRANSFORM(KWCamellia256);                       // transformKWCamellia256GetKlass
+
+    XMLSEC_REGISTER_TRANSFORM(ChaCha20);                            // transformChaCha20GetKlass
+    XMLSEC_REGISTER_TRANSFORM(ChaCha20Poly1305);                    // transformChaCha20Poly1305GetKlass
+
     XMLSEC_REGISTER_TRANSFORM(Des3Cbc);                             // transformDes3CbcGetKlass
 
     XMLSEC_REGISTER_TRANSFORM(KWDes3);                              // transformKWDes3GetKlass
@@ -645,6 +661,9 @@ xmlSecCryptoDLFunctionsRegisterKeyDataAndTransforms(struct _xmlSecCryptoDLFuncti
     XMLSEC_REGISTER_TRANSFORM(DsaSha256);                           // transformDsaSha256GetKlass
 
     XMLSEC_REGISTER_TRANSFORM(Ecdh);                                // transformEcdhGetKlass
+
+    XMLSEC_REGISTER_TRANSFORM(X25519);                              // transformX25519GetKlass
+    XMLSEC_REGISTER_TRANSFORM(X448);                                // transformX448GetKlass
 
     XMLSEC_REGISTER_TRANSFORM(EcdsaRipemd160);                      // transformEcdsaRipemd160GetKlass
 
@@ -677,6 +696,7 @@ xmlSecCryptoDLFunctionsRegisterKeyDataAndTransforms(struct _xmlSecCryptoDLFuncti
     XMLSEC_REGISTER_TRANSFORM(MLDSA65);                             // transformMLDSA65GetKlass
     XMLSEC_REGISTER_TRANSFORM(MLDSA87);                             // transformMLDSA87GetKlass
 
+    XMLSEC_REGISTER_TRANSFORM(Hkdf);                               // transformHkdfGetKlass
     XMLSEC_REGISTER_TRANSFORM(Pbkdf2);                              // transformPbkdf2GetKlass
 
     XMLSEC_REGISTER_TRANSFORM(Ripemd160);                           // transformRipemd160GetKlass
@@ -715,6 +735,12 @@ xmlSecCryptoDLFunctionsRegisterKeyDataAndTransforms(struct _xmlSecCryptoDLFuncti
     XMLSEC_REGISTER_TRANSFORM(SLHDSA_SHA2_192s);                     // transformSLHDSA_SHA2_192sGetKlass
     XMLSEC_REGISTER_TRANSFORM(SLHDSA_SHA2_256f);                     // transformSLHDSA_SHA2_256fGetKlass
     XMLSEC_REGISTER_TRANSFORM(SLHDSA_SHA2_256s);                     // transformSLHDSA_SHA2_256sGetKlass
+
+    XMLSEC_REGISTER_TRANSFORM(EdDSAEd25519);                        // transformEdDSAEd25519GetKlass
+    XMLSEC_REGISTER_TRANSFORM(EdDSAEd25519ctx);                     // transformEdDSAEd25519ctxGetKlass
+    XMLSEC_REGISTER_TRANSFORM(EdDSAEd25519ph);                      // transformEdDSAEd25519phGetKlass
+    XMLSEC_REGISTER_TRANSFORM(EdDSAEd448);                          // transformEdDSAEd448GetKlass
+    XMLSEC_REGISTER_TRANSFORM(EdDSAEd448ph);                        // transformEdDSAEd448phGetKlass
 
     XMLSEC_REGISTER_TRANSFORM(Sha1);                                // transformSha1GetKlass
 

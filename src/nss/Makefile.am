@@ -21,7 +21,7 @@ libxmlsec1_nss_la_CPPFLAGS = \
 libxmlsec1_nss_la_SOURCES =\
 	app.c \
 	ciphers_cbc.c \
-	ciphers_gcm.c \
+	ciphers_aead.c \
 	crypto.c \
 	digests.c \
 	globals.h \
@@ -29,10 +29,12 @@ libxmlsec1_nss_la_SOURCES =\
 	keysstore.c \
 	keytrans.c \
 	kw_des.c \
-	kw_aes.c \
-	pbkdf2.c \
+	kw_rfc_3394.c \
+	kdf.c \
+	der_encoded_value.c \
 	pkikeys.c \
 	private.h \
+	key_agrmnt.c \
 	signatures.c \
 	symkeys.c \
 	x509.c \

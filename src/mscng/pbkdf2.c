@@ -193,16 +193,40 @@ static LPCWSTR
 xmlSecMSCngPbkdf2GetMacFromHref(const xmlChar* href) {
     /* use SHA256 by default */
     if(href == NULL) {
+#ifndef XMLSEC_NO_SHA256
         return(BCRYPT_SHA256_ALGORITHM);
-    } else if(xmlStrcmp(href, xmlSecHrefHmacSha1) == 0) {
+#else  /* XMLSEC_NO_SHA256 */
+        xmlSecOtherError2(XMLSEC_ERRORS_R_INVALID_ALGORITHM, NULL,
+            "SHA256 is disabled; href=%s", xmlSecErrorsSafeString(href));
+        return(NULL);
+#endif /* XMLSEC_NO_SHA256 */
+    } else
+
+#ifndef XMLSEC_NO_SHA1
+    if(xmlStrcmp(href, xmlSecHrefHmacSha1) == 0) {
         return(BCRYPT_SHA1_ALGORITHM);
-    } else if(xmlStrcmp(href, xmlSecHrefHmacSha256) == 0) {
+    } else
+#endif /* XMLSEC_NO_SHA1 */
+
+#ifndef XMLSEC_NO_SHA256
+    if(xmlStrcmp(href, xmlSecHrefHmacSha256) == 0) {
         return(BCRYPT_SHA256_ALGORITHM);
-    } else if(xmlStrcmp(href, xmlSecHrefHmacSha384) == 0) {
+    } else
+#endif /* XMLSEC_NO_SHA256 */
+
+#ifndef XMLSEC_NO_SHA384
+    if(xmlStrcmp(href, xmlSecHrefHmacSha384) == 0) {
         return(BCRYPT_SHA384_ALGORITHM);
-    } else if(xmlStrcmp(href, xmlSecHrefHmacSha512) == 0) {
+    } else
+#endif /* XMLSEC_NO_SHA384 */
+
+#ifndef XMLSEC_NO_SHA512
+    if(xmlStrcmp(href, xmlSecHrefHmacSha512) == 0) {
         return(BCRYPT_SHA512_ALGORITHM);
-    } else {
+    } else
+#endif /* XMLSEC_NO_SHA512 */
+
+    {
         xmlSecOtherError2(XMLSEC_ERRORS_R_INVALID_ALGORITHM, NULL,
             "href=%s", xmlSecErrorsSafeString(href));
         return(NULL);
@@ -266,31 +290,32 @@ xmlSecMSCngPbkdf2PeformKeyDerivation(
     BCRYPT_ALG_HANDLE hKdfAlg = NULL;
     BCRYPT_KEY_HANDLE hKey= NULL;
     DWORD cbResultLength = 0;
-    BCryptBuffer paramBufferPBKDF2[] =
-    {
-         {
-            cbSalt,
-            KDF_SALT,
-            pbSalt,
-        },
-        {
-            sizeof(cbIterationCount),
-            KDF_ITERATION_COUNT,
-            (PBYTE)&cbIterationCount,
-        },
-        {
-            ((ULONG)wcslen(pszHashAlgo) + 1) * sizeof(WCHAR),
-            KDF_HASH_ALGORITHM,
-            (LPWSTR)pszHashAlgo,
-        }
-    };
-    BCryptBufferDesc paramsPBKDF2 =
-    {
-            BCRYPTBUFFER_VERSION,
-            3,
-            paramBufferPBKDF2
-    };
+    BCryptBuffer paramBufferPBKDF2[3];
+    BCryptBufferDesc paramsPBKDF2;
     int res = -1;
+
+    xmlSecAssert2(pszHashAlgo != NULL, -1);
+    xmlSecAssert2(pbSecret != NULL, -1);
+    xmlSecAssert2(cbSecret > 0, -1);
+    xmlSecAssert2(pbSalt != NULL, -1);
+    xmlSecAssert2(cbSalt > 0, -1);
+    xmlSecAssert2(cbIterationCount > 0, -1);
+    xmlSecAssert2(pbOut != NULL, -1);
+    xmlSecAssert2(cbOut > 0, -1);
+
+    paramBufferPBKDF2[0].cbBuffer = cbSalt;
+    paramBufferPBKDF2[0].BufferType = KDF_SALT;
+    paramBufferPBKDF2[0].pvBuffer = pbSalt;
+    paramBufferPBKDF2[1].cbBuffer = sizeof(cbIterationCount);
+    paramBufferPBKDF2[1].BufferType = KDF_ITERATION_COUNT;
+    paramBufferPBKDF2[1].pvBuffer = (PBYTE)&cbIterationCount;
+    paramBufferPBKDF2[2].cbBuffer = ((ULONG)wcslen(pszHashAlgo) + 1) * sizeof(WCHAR);
+    paramBufferPBKDF2[2].BufferType = KDF_HASH_ALGORITHM;
+    paramBufferPBKDF2[2].pvBuffer = (LPWSTR)pszHashAlgo;
+
+    paramsPBKDF2.ulVersion = BCRYPTBUFFER_VERSION;
+    paramsPBKDF2.cBuffers = 3;
+    paramsPBKDF2.pBuffers = paramBufferPBKDF2;
 
     /* get algo provider */
     status = BCryptOpenAlgorithmProvider(

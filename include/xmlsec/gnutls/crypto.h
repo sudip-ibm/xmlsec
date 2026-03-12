@@ -44,15 +44,26 @@ XMLSEC_CRYPTO_EXPORT int                xmlSecGnuTLSGenerateRandom      (xmlSecB
 
 /********************************************************************
  *
- * Asymetric keys helpers
+ * Asymmetric keys helpers
  *
  *******************************************************************/
 
-XMLSEC_CRYPTO_EXPORT xmlSecKeyPtr       xmlSecGCryptAsymetricKeyCreatePub       (gnutls_pubkey_t pubkey);
-XMLSEC_CRYPTO_EXPORT xmlSecKeyPtr       xmlSecGCryptAsymetricKeyCreatePriv      (gnutls_privkey_t privkey);
+XMLSEC_CRYPTO_EXPORT xmlSecKeyPtr       xmlSecGnuTLSAsymmetricKeyCreatePub       (gnutls_pubkey_t pubkey);
+XMLSEC_CRYPTO_EXPORT xmlSecKeyPtr       xmlSecGnuTLSAsymmetricKeyCreatePriv      (gnutls_privkey_t privkey);
 
-XMLSEC_CRYPTO_EXPORT gnutls_pubkey_t    xmlSecGCryptAsymetricKeyGetPub          (xmlSecKeyPtr key);
-XMLSEC_CRYPTO_EXPORT gnutls_privkey_t   xmlSecGCryptAsymetricKeyGetPriv         (xmlSecKeyPtr key);
+XMLSEC_CRYPTO_EXPORT gnutls_pubkey_t    xmlSecGnuTLSAsymmetricKeyGetPub          (xmlSecKeyPtr key);
+XMLSEC_CRYPTO_EXPORT gnutls_privkey_t   xmlSecGnuTLSAsymmetricKeyGetPriv         (xmlSecKeyPtr key);
+
+/********************************************************************
+ *
+ * DEPRECATED
+ *
+ *******************************************************************/
+XMLSEC_CRYPTO_EXPORT XMLSEC_DEPRECATED xmlSecKeyPtr    xmlSecGCryptAsymetricKeyCreatePub       (gnutls_pubkey_t pubkey);
+XMLSEC_CRYPTO_EXPORT XMLSEC_DEPRECATED xmlSecKeyPtr    xmlSecGCryptAsymetricKeyCreatePriv      (gnutls_privkey_t privkey);
+
+XMLSEC_CRYPTO_EXPORT XMLSEC_DEPRECATED gnutls_pubkey_t xmlSecGCryptAsymetricKeyGetPub          (xmlSecKeyPtr key);
+XMLSEC_CRYPTO_EXPORT XMLSEC_DEPRECATED gnutls_privkey_t xmlSecGCryptAsymetricKeyGetPriv         (xmlSecKeyPtr key);
 
 /********************************************************************
  *
@@ -194,6 +205,80 @@ XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecGnuTLSTransformDes3CbcGetKlass(void
 XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecGnuTLSTransformKWDes3GetKlass(void);
 
 #endif /* XMLSEC_NO_DES */
+
+/********************************************************************
+ *
+ * Camellia transforms
+ *
+ *******************************************************************/
+#ifndef XMLSEC_NO_CAMELLIA
+/**
+ * xmlSecGnuTLSKeyDataCamelliaId:
+ *
+ * The Camellia key data klass.
+ */
+#define xmlSecGnuTLSKeyDataCamelliaId \
+        xmlSecGnuTLSKeyDataCamelliaGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecKeyDataId    xmlSecGnuTLSKeyDataCamelliaGetKlass  (void);
+XMLSEC_CRYPTO_EXPORT int                xmlSecGnuTLSKeyDataCamelliaSet       (xmlSecKeyDataPtr data,
+                                                                         const xmlSecByte* buf,
+                                                                         xmlSecSize bufSize);
+
+/**
+ * xmlSecGnuTLSTransformCamellia128CbcId:
+ *
+ * The Camellia128 CBC cipher transform klass.
+ */
+#define xmlSecGnuTLSTransformCamellia128CbcId \
+        xmlSecGnuTLSTransformCamellia128CbcGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId  xmlSecGnuTLSTransformCamellia128CbcGetKlass(void);
+
+/**
+ * xmlSecGnuTLSTransformCamellia192CbcId:
+ *
+ * The Camellia192 CBC cipher transform klass.
+ */
+#define xmlSecGnuTLSTransformCamellia192CbcId \
+        xmlSecGnuTLSTransformCamellia192CbcGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId  xmlSecGnuTLSTransformCamellia192CbcGetKlass(void);
+
+/**
+ * xmlSecGnuTLSTransformCamellia256CbcId:
+ *
+ * The Camellia256 CBC cipher transform klass.
+ */
+#define xmlSecGnuTLSTransformCamellia256CbcId \
+        xmlSecGnuTLSTransformCamellia256CbcGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId  xmlSecGnuTLSTransformCamellia256CbcGetKlass(void);
+
+/**
+ * xmlSecGnuTLSTransformKWCamellia128Id:
+ *
+ * The Camellia 128 key wrap transform klass.
+ */
+#define xmlSecGnuTLSTransformKWCamellia128Id \
+        xmlSecGnuTLSTransformKWCamellia128GetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId  xmlSecGnuTLSTransformKWCamellia128GetKlass(void);
+
+/**
+ * xmlSecGnuTLSTransformKWCamellia192Id:
+ *
+ * The Camellia 192 key wrap transform klass.
+ */
+#define xmlSecGnuTLSTransformKWCamellia192Id \
+        xmlSecGnuTLSTransformKWCamellia192GetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId  xmlSecGnuTLSTransformKWCamellia192GetKlass(void);
+
+/**
+ * xmlSecGnuTLSTransformKWCamellia256Id:
+ *
+ * The Camellia 256 key wrap transform klass.
+ */
+#define xmlSecGnuTLSTransformKWCamellia256Id \
+        xmlSecGnuTLSTransformKWCamellia256GetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId  xmlSecGnuTLSTransformKWCamellia256GetKlass(void);
+
+#endif /* XMLSEC_NO_CAMELLIA */
 
 /********************************************************************
  *
@@ -511,6 +596,138 @@ XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecGnuTLSTransformMLDSA87GetKlass(void
 
 /********************************************************************
  *
+ * EdDSA keys and transforms
+ *
+ *******************************************************************/
+#ifndef XMLSEC_NO_EDDSA
+
+/**
+ * xmlSecGnuTLSKeyDataEdDSAId:
+ *
+ * The EdDSA key klass (Ed25519 and Ed448).
+ */
+#define xmlSecGnuTLSKeyDataEdDSAId   xmlSecGnuTLSKeyDataEdDSAGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecKeyDataId    xmlSecGnuTLSKeyDataEdDSAGetKlass        (void);
+XMLSEC_CRYPTO_EXPORT int                xmlSecGnuTLSKeyDataEdDSAAdoptKey        (xmlSecKeyDataPtr data,
+                                                                                 gnutls_pubkey_t pubkey,
+                                                                                 gnutls_privkey_t privkey);
+XMLSEC_CRYPTO_EXPORT gnutls_pubkey_t    xmlSecGnuTLSKeyDataEdDSAGetPublicKey    (xmlSecKeyDataPtr data);
+XMLSEC_CRYPTO_EXPORT gnutls_privkey_t   xmlSecGnuTLSKeyDataEdDSAGetPrivateKey   (xmlSecKeyDataPtr data);
+
+
+/**
+ * xmlSecGnuTLSTransformEdDSAEd25519Id:
+ *
+ * The EdDSA-Ed25519 signature transform klass.
+ */
+#define xmlSecGnuTLSTransformEdDSAEd25519Id  \
+        xmlSecGnuTLSTransformEdDSAEd25519GetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecGnuTLSTransformEdDSAEd25519GetKlass(void);
+
+
+/**
+ * xmlSecGnuTLSTransformEdDSAEd448Id:
+ *
+ * The EdDSA-Ed448 signature transform klass.
+ */
+#define xmlSecGnuTLSTransformEdDSAEd448Id  \
+        xmlSecGnuTLSTransformEdDSAEd448GetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecGnuTLSTransformEdDSAEd448GetKlass(void);
+
+#endif /* XMLSEC_NO_EDDSA */
+
+/********************************************************************
+ *
+ * XDH keys and transforms (X25519 and X448)
+ *
+ *******************************************************************/
+#ifndef XMLSEC_NO_XDH
+
+/**
+ * xmlSecGnuTLSKeyDataXdhId:
+ *
+ * The XDH key klass (X25519 and X448).
+ */
+#define xmlSecGnuTLSKeyDataXdhId   xmlSecGnuTLSKeyDataXdhGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecKeyDataId    xmlSecGnuTLSKeyDataXdhGetKlass          (void);
+XMLSEC_CRYPTO_EXPORT int                xmlSecGnuTLSKeyDataXdhAdoptKey          (xmlSecKeyDataPtr data,
+                                                                                 gnutls_pubkey_t pubkey,
+                                                                                 gnutls_privkey_t privkey);
+XMLSEC_CRYPTO_EXPORT gnutls_pubkey_t    xmlSecGnuTLSKeyDataXdhGetPublicKey      (xmlSecKeyDataPtr data);
+XMLSEC_CRYPTO_EXPORT gnutls_privkey_t   xmlSecGnuTLSKeyDataXdhGetPrivateKey     (xmlSecKeyDataPtr data);
+
+
+/**
+ * xmlSecGnuTLSTransformX25519Id:
+ *
+ * The X25519 key agreement transform klass.
+ */
+#define xmlSecGnuTLSTransformX25519Id  \
+        xmlSecGnuTLSTransformX25519GetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecGnuTLSTransformX25519GetKlass(void);
+
+
+/**
+ * xmlSecGnuTLSTransformX448Id:
+ *
+ * The X448 key agreement transform klass.
+ */
+#define xmlSecGnuTLSTransformX448Id  \
+        xmlSecGnuTLSTransformX448GetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecGnuTLSTransformX448GetKlass(void);
+
+#endif /* XMLSEC_NO_XDH */
+
+/********************************************************************
+ *
+ * ECDH transforms
+ *
+ *******************************************************************/
+#ifndef XMLSEC_NO_EC
+
+/**
+ * xmlSecGnuTLSTransformEcdhId:
+ *
+ * The ECDH-ES key agreement transform klass.
+ */
+#define xmlSecGnuTLSTransformEcdhId  \
+        xmlSecGnuTLSTransformEcdhGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecGnuTLSTransformEcdhGetKlass(void);
+
+#endif /* XMLSEC_NO_EC */
+
+/********************************************************************
+ *
+ * ConcatKDF transforms
+ *
+ *******************************************************************/
+#ifndef XMLSEC_NO_CONCATKDF
+
+/**
+ * xmlSecGnuTLSKeyDataConcatKdfId:
+ *
+ * The ConcatKDF key klass.
+ */
+#define xmlSecGnuTLSKeyDataConcatKdfId \
+        xmlSecGnuTLSKeyDataConcatKdfGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecKeyDataId    xmlSecGnuTLSKeyDataConcatKdfGetKlass    (void);
+XMLSEC_CRYPTO_EXPORT int                xmlSecGnuTLSKeyDataConcatKdfSet         (xmlSecKeyDataPtr data,
+                                                                                 const xmlSecByte* buf,
+                                                                                 xmlSecSize bufSize);
+
+/**
+ * xmlSecGnuTLSTransformConcatKdfId:
+ *
+ * The ConcatKDF key derivation transform klass.
+ */
+#define xmlSecGnuTLSTransformConcatKdfId \
+        xmlSecGnuTLSTransformConcatKdfGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecGnuTLSTransformConcatKdfGetKlass(void);
+
+#endif /* XMLSEC_NO_CONCATKDF */
+
+/********************************************************************
+ *
  * HMAC transforms
  *
  *******************************************************************/
@@ -604,6 +821,36 @@ XMLSEC_CRYPTO_EXPORT int                xmlSecGnuTLSKeyDataPbkdf2Set      (xmlSe
 XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecGnuTLSTransformPbkdf2GetKlass(void);
 
 #endif /* XMLSEC_NO_PBKDF2 */
+
+/********************************************************************
+ *
+ * HKDF transforms
+ *
+ *******************************************************************/
+#ifndef XMLSEC_NO_HKDF
+
+/**
+ * xmlSecGnuTLSKeyDataHkdfId:
+ *
+ * The HKDF key klass.
+ */
+#define xmlSecGnuTLSKeyDataHkdfId \
+        xmlSecGnuTLSKeyDataHkdfGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecKeyDataId    xmlSecGnuTLSKeyDataHkdfGetKlass (void);
+XMLSEC_CRYPTO_EXPORT int                xmlSecGnuTLSKeyDataHkdfSet      (xmlSecKeyDataPtr data,
+                                                                         const xmlSecByte* buf,
+                                                                         xmlSecSize bufSize);
+
+/**
+ * xmlSecGnuTLSTransformHkdfId:
+ *
+ * The HKDF key derivation transform klass.
+ */
+#define xmlSecGnuTLSTransformHkdfId \
+        xmlSecGnuTLSTransformHkdfGetKlass()
+XMLSEC_CRYPTO_EXPORT xmlSecTransformId xmlSecGnuTLSTransformHkdfGetKlass(void);
+
+#endif /* XMLSEC_NO_HKDF */
 
 /********************************************************************
  *

@@ -24,11 +24,12 @@
 #define XMLSEC_OPENSSL_NO_ASN1_TIME_TO_TM   1
 #define XMLSEC_OPENSSL_NO_STORE             1
 #define XMLSEC_OPENSSL_NO_DEEP_COPY         1
-#define XMLSEC_OPENSSL_NO_CRL_VERIFICATION  1
 #define XMLSEC_NO_RSA_OAEP                  1
 #define XMLSEC_NO_DH                        1
 #define XMLSEC_NO_DSA                       1
 #define XMLSEC_NO_SHA3                      1
+#define XMLSEC_NO_CAMELLIA                  1
+#define XMLSEC_NO_CHACHA20                  1
 
 
 #define ENGINE_cleanup(...)                 {}
@@ -126,20 +127,14 @@ typedef int xmlSecOpenSSLSizeT;
 #define XMLSEC_OPENSSL_NO_PWD_CALLBACK      1
 #define XMLSEC_OPENSSL_NO_DEEP_COPY         1
 #define XMLSEC_NO_DH                        1
+#define XMLSEC_NO_CAMELLIA                  1
+#define XMLSEC_NO_CHACHA20                  1
 
 #define RAND_priv_bytes(buf,len)            RAND_bytes((buf), (len))
 
 /* simply return success */
 #define sk_X509_reserve(crts, num)          (1)
 #define sk_X509_CRL_reserve(crls, num)      (1)
-
-#if (LIBRESSL_VERSION_NUMBER < 0x3080000fL)
-#define XMLSEC_NO_SHA3                      1
-#endif /* (LIBRESSL_VERSION_NUMBER < 0x3080000fL) */
-
-#if (LIBRESSL_VERSION_NUMBER < 0x3070200fL)
-#define UI_null()                           NULL
-#endif /* (LIBRESSL_VERSION_NUMBER < 0x3070200fL) */
 
 #endif /* defined(LIBRESSL_VERSION_NUMBER) */
 
@@ -152,6 +147,8 @@ typedef int xmlSecOpenSSLSizeT;
 #if !defined(XMLSEC_OPENSSL_API_350)
 #define XMLSEC_NO_MLDSA                     1
 #define XMLSEC_NO_SLHDSA                    1
+#define XMLSEC_NO_EDDSA                     1
+#define XMLSEC_NO_XDH                       1
 #endif /* !defined(XMLSEC_OPENSSL_API_350) */
 
 /******************************************************************************
@@ -161,15 +158,21 @@ typedef int xmlSecOpenSSLSizeT;
  *****************************************************************************/
 #if !defined(XMLSEC_OPENSSL_API_300)
 
-/* ConcatKDF (SSKDF) key derivation algorithm is only available on OpenSSL 3.0.0 or above
+/* ConcatKDF (SSKDF) key derivation algorithm is only available on OpenSSL 3.0.0 or newer
  * (https://www.openssl.org/docs/man3.0/man7/EVP_KDF-SS.html)
  */
 #define XMLSEC_NO_CONCATKDF     1
 
-/* PBKDF2 key derivation algorithm is only available on OpenSSL 3.0.0 or above
+/* PBKDF2 key derivation algorithm is only available on OpenSSL 3.0.0 or newer
  * (https://www.openssl.org/docs/man3.0/man7/EVP_KDF-PBKDF2.html)
  */
 #define XMLSEC_NO_PBKDF2        1
+
+/* HKDF key derivation algorithm is only available on OpenSSL 3.0.0 or newer
+ * (https://www.openssl.org/docs/man3.0/man7/EVP_KDF-HKDF.html)
+ */
+#define XMLSEC_NO_HKDF          1
+
 
 #define BIO_new_ex(libctx,type)                                     BIO_new((type))
 #define PEM_read_bio_PrivateKey_ex(bp,x,cb,u,libctx,propq)          PEM_read_bio_PrivateKey((bp),(x),(cb),(u))
@@ -211,16 +214,19 @@ static inline int xmlSecOpenSSLCompatRand(unsigned char *buf, xmlSecSize size) {
 
 
 #ifdef XMLSEC_OPENSSL_API_300
-#define XMLSEEC_OPENSSL_RAND_BYTES_STRENGTH     0
+#define XMLSEC_OPENSSL_RAND_BYTES_STRENGTH     0
 
 /* Cipher names, hopefully OpenSSL defines them one day */
-#define XMLSEEC_OPENSSL_CIPHER_NAME_DES3_EDE    "DES3"
-#define XMLSEEC_OPENSSL_CIPHER_NAME_AES128_CBC  "AES-128-CBC"
-#define XMLSEEC_OPENSSL_CIPHER_NAME_AES192_CBC  "AES-192-CBC"
-#define XMLSEEC_OPENSSL_CIPHER_NAME_AES256_CBC  "AES-256-CBC"
-#define XMLSEEC_OPENSSL_CIPHER_NAME_AES128_GCM  "AES-128-GCM"
-#define XMLSEEC_OPENSSL_CIPHER_NAME_AES192_GCM  "AES-192-GCM"
-#define XMLSEEC_OPENSSL_CIPHER_NAME_AES256_GCM  "AES-256-GCM"
+#define XMLSEC_OPENSSL_CIPHER_NAME_DES3_EDE         "DES3"
+#define XMLSEC_OPENSSL_CIPHER_NAME_AES128_CBC       "AES-128-CBC"
+#define XMLSEC_OPENSSL_CIPHER_NAME_AES192_CBC       "AES-192-CBC"
+#define XMLSEC_OPENSSL_CIPHER_NAME_AES256_CBC       "AES-256-CBC"
+#define XMLSEC_OPENSSL_CIPHER_NAME_AES128_GCM       "AES-128-GCM"
+#define XMLSEC_OPENSSL_CIPHER_NAME_AES192_GCM       "AES-192-GCM"
+#define XMLSEC_OPENSSL_CIPHER_NAME_AES256_GCM       "AES-256-GCM"
+#define XMLSEC_OPENSSL_CIPHER_NAME_CAMELLIA128_CBC  "CAMELLIA-128-CBC"
+#define XMLSEC_OPENSSL_CIPHER_NAME_CAMELLIA192_CBC  "CAMELLIA-192-CBC"
+#define XMLSEC_OPENSSL_CIPHER_NAME_CAMELLIA256_CBC  "CAMELLIA-256-CBC"
 
 #endif /* XMLSEC_OPENSSL_API_300 */
 

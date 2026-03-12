@@ -32,8 +32,9 @@
 #include <xmlsec/mscng/crypto.h>
 #include <xmlsec/mscng/x509.h>
 
-#include "../cast_helpers.h"
 #include "private.h"
+#include "../cast_helpers.h"
+#include "../x509_helpers.h"
 
 typedef struct _xmlSecMSCngX509StoreCtx xmlSecMSCngX509StoreCtx,
                                        *xmlSecMSCngX509StoreCtxPtr;
@@ -42,6 +43,7 @@ struct _xmlSecMSCngX509StoreCtx {
     HCERTSTORE trustedMemStore;
     HCERTSTORE untrusted;
     HCERTSTORE untrustedMemStore;
+    HCERTSTORE crlMemStore;
 };
 
 XMLSEC_KEY_DATA_STORE_DECLARE(MSCngX509Store, xmlSecMSCngX509StoreCtx)
@@ -56,6 +58,51 @@ XMLSEC_KEY_DATA_STORE_DECLARE(MSCngX509Store, xmlSecMSCngX509StoreCtx)
 #else  // _DEBUG
 #define XMLSEC_CLOSE_STORE_FLAG     (0)
 #endif // _DEBUG
+
+static int              xmlSecMSCngUnixTimeToFileTime            (time_t in,
+                                                                   LPFILETIME out);
+
+static FILETIME*
+xmlSecMSCngX509StoreGetVerificationTime(xmlSecKeyInfoCtxPtr keyInfoCtx, FILETIME* timeContainer) {
+    xmlSecAssert2(keyInfoCtx != NULL, NULL);
+    xmlSecAssert2(timeContainer != NULL, NULL);
+
+    if(keyInfoCtx->certsVerificationTime > 0) {
+        if(xmlSecMSCngUnixTimeToFileTime(keyInfoCtx->certsVerificationTime, timeContainer) < 0) {
+            xmlSecInternalError("xmlSecMSCngUnixTimeToFileTime", NULL);
+            return(NULL);
+        }
+        return(timeContainer);
+    } else if((keyInfoCtx->flags & XMLSEC_KEYINFO_FLAGS_X509DATA_SKIP_TIME_CHECKS) != 0) {
+        return(NULL);
+    } else {
+        GetSystemTimeAsFileTime(timeContainer);
+        return(timeContainer);
+    }
+}
+
+static int
+xmlSecMSCngX509StoreIsCrlTimeValid(PCCRL_CONTEXT crlCtx, LPFILETIME time) {
+    xmlSecAssert2(crlCtx != NULL, -1);
+    xmlSecAssert2(crlCtx->pCrlInfo != NULL, -1);
+
+    if(time == NULL) {
+        return(1);
+    }
+
+    if(CompareFileTime(time, &(crlCtx->pCrlInfo->ThisUpdate)) < 0) {
+        return(0);
+    }
+
+    if((crlCtx->pCrlInfo->NextUpdate.dwLowDateTime != 0) ||
+            (crlCtx->pCrlInfo->NextUpdate.dwHighDateTime != 0)) {
+        if(CompareFileTime(time, &(crlCtx->pCrlInfo->NextUpdate)) > 0) {
+            return(0);
+        }
+    }
+
+    return(1);
+}
 
 static void
 xmlSecMSCngX509StoreFinalize(xmlSecKeyDataStorePtr store) {
@@ -96,6 +143,14 @@ xmlSecMSCngX509StoreFinalize(xmlSecKeyDataStorePtr store) {
             xmlSecMSCngLastError("CertCloseStore", xmlSecKeyDataStoreGetName(store));
             /* ignore error */
          }
+    }
+
+    if(ctx->crlMemStore != NULL) {
+        ret = CertCloseStore(ctx->crlMemStore, XMLSEC_CLOSE_STORE_FLAG);
+        if(ret == FALSE) {
+            xmlSecMSCngLastError("CertCloseStore", xmlSecKeyDataStoreGetName(store));
+            /* ignore error */
+        }
     }
 
     memset(ctx, 0, sizeof(xmlSecMSCngX509StoreCtx));
@@ -280,6 +335,19 @@ xmlSecMSCngX509StoreInitialize(xmlSecKeyDataStorePtr store) {
         return(-1);
     }
 
+    /* create a memory store for externally loaded CRLs */
+    ctx->crlMemStore = CertOpenStore(
+        CERT_STORE_PROV_MEMORY,
+        X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+        0,
+        CERT_STORE_CREATE_NEW_FLAG,
+        NULL);
+    if(ctx->crlMemStore == NULL) {
+        xmlSecMSCngLastError("CertOpenStore", xmlSecKeyDataStoreGetName(store));
+        xmlSecMSCngX509StoreFinalize(store);
+        return(-1);
+    }
+
     return(0);
 }
 
@@ -359,6 +427,35 @@ xmlSecMSCngX509StoreAdoptCert(xmlSecKeyDataStorePtr store, PCCERT_CONTEXT pCert,
 }
 
 /**
+ * xmlSecMSCngX509StoreAdoptCrl:
+ * @store:              the pointer to X509 key data store klass.
+ * @pCrl:               the pointer to PCCRL_CONTEXT X509 CRL.
+ *
+ * Adds CRL to the store for revocation checking.
+ *
+ * Returns: 0 on success or a negative value if an error occurs.
+ */
+int
+xmlSecMSCngX509StoreAdoptCrl(xmlSecKeyDataStorePtr store, PCCRL_CONTEXT pCrl) {
+    xmlSecMSCngX509StoreCtxPtr ctx;
+
+    xmlSecAssert2(xmlSecKeyDataStoreCheckId(store, xmlSecMSCngX509StoreId), -1);
+    xmlSecAssert2(pCrl != NULL, -1);
+
+    ctx = xmlSecMSCngX509StoreGetCtx(store);
+    xmlSecAssert2(ctx != NULL, -1);
+    xmlSecAssert2(ctx->crlMemStore != NULL, -1);
+
+    if(!CertAddCRLContextToStore(ctx->crlMemStore, pCrl, CERT_STORE_ADD_ALWAYS, NULL)) {
+        xmlSecMSCngLastError("CertAddCRLContextToStore", xmlSecKeyDataStoreGetName(store));
+        return(-1);
+    }
+    CertFreeCRLContext(pCrl);
+
+    return(0);
+}
+
+/**
  * xmlSecMSCngCheckRevocation:
  * @store: may contain a CRL
  * @cert: the certificate that is revoked (or not)
@@ -368,15 +465,25 @@ xmlSecMSCngX509StoreAdoptCert(xmlSecKeyDataStorePtr store, PCCERT_CONTEXT pCert,
  * Returns: 0 on success or a negative value if an errors occurs.
  */
 static int
-xmlSecMSCngCheckRevocation(HCERTSTORE store, PCCERT_CONTEXT cert) {
+xmlSecMSCngCheckRevocation(HCERTSTORE store, PCCERT_CONTEXT cert, LPFILETIME time) {
     PCCRL_CONTEXT crlCtx = NULL;
     PCRL_ENTRY crlEntry = NULL;
+    int isCrlTimeValid;
     int ret;
 
     xmlSecAssert2(store != NULL, -1);
     xmlSecAssert2(cert != NULL, -1);
 
     while((crlCtx = CertEnumCRLsInStore(store, crlCtx)) != NULL) {
+        isCrlTimeValid = xmlSecMSCngX509StoreIsCrlTimeValid(crlCtx, time);
+        if(isCrlTimeValid < 0) {
+            xmlSecInternalError("xmlSecMSCngX509StoreIsCrlTimeValid", NULL);
+            CertFreeCRLContext(crlCtx);
+            return(-1);
+        } else if(isCrlTimeValid == 0) {
+            continue;
+        }
+
         ret = CertFindCertificateInCRL(cert,
             crlCtx,
             0,
@@ -541,7 +648,7 @@ xmlSecMSCngX509StoreVerifyCertificateOwn(PCCERT_CONTEXT cert, FILETIME* time,
     }
 
     /* check certificate revokation */
-    ret = xmlSecMSCngCheckRevocation(certStore, cert);
+    ret = xmlSecMSCngCheckRevocation(certStore, cert, time);
     if(ret < 0) {
         xmlSecInternalError("xmlSecMSCngCheckRevocation", NULL);
         return(-1);
@@ -656,7 +763,7 @@ xmlSecMSCngX509StoreVerifyCertificateOwn(PCCERT_CONTEXT cert, FILETIME* time,
 /**
  * xmlSecMSCngX509StoreVerifyCertificateSystem:
  * @cert: the certificate we check
- * @time: pointer to FILETIME that we are interested in
+ * @time: pointer to FILETIME that we are interested in (can be NULL, don't check certificate notBefore/notAfter)
  * @untrustedStore: untrusted certificates added via API
  * @docStore: untrusted certificates/CRLs extracted from a document
  *
@@ -665,13 +772,16 @@ xmlSecMSCngX509StoreVerifyCertificateOwn(PCCERT_CONTEXT cert, FILETIME* time,
  * Returns: 1 on success (cert verified), 0 if cert can't be verified, or a negative value if an error occurs.
  */
 static int
-xmlSecMSCngX509StoreVerifyCertificateSystem(PCCERT_CONTEXT cert,
-        FILETIME* time, HCERTSTORE untrustedStore, HCERTSTORE docStore) {
+xmlSecMSCngX509StoreVerifyCertificateSystem(PCCERT_CONTEXT cert, FILETIME* time,
+    HCERTSTORE untrustedStore, HCERTSTORE docStore, HCERTSTORE crlStore
+) {
     PCCERT_CHAIN_CONTEXT pChainContext = NULL;
     CERT_CHAIN_PARA chainPara;
     HCERTSTORE chainStore = NULL;
     int res = -1;
     int ret;
+
+    xmlSecAssert2(cert != NULL, -1);
 
     /* initialize data structures */
     memset(&chainPara, 0, sizeof(CERT_CHAIN_PARA));
@@ -684,16 +794,30 @@ xmlSecMSCngX509StoreVerifyCertificateSystem(PCCERT_CONTEXT cert,
         goto done;
     }
 
-    ret = CertAddStoreToCollection(chainStore, docStore, 0, 0);
-    if(ret == FALSE) {
-        xmlSecMSCngLastError("CertAddStoreToCollection", NULL);
-        goto done;
+    /* add stores to collection */
+    if (docStore != NULL) {
+        ret = CertAddStoreToCollection(chainStore, docStore, 0, 0);
+        if(ret == FALSE) {
+            xmlSecMSCngLastError("CertAddStoreToCollection(docStore)", NULL);
+            goto done;
+        }
     }
 
-    ret = CertAddStoreToCollection(chainStore, untrustedStore, 0, 0);
-    if(ret == FALSE) {
-        xmlSecMSCngLastError("CertAddStoreToCollection", NULL);
-        goto done;
+    if(untrustedStore != NULL) {
+        ret = CertAddStoreToCollection(chainStore, untrustedStore, 0, 0);
+        if(ret == FALSE) {
+            xmlSecMSCngLastError("CertAddStoreToCollection(untrustedStore)", NULL);
+            goto done;
+        }
+    }
+
+
+    if(crlStore != NULL) {
+        ret = CertAddStoreToCollection(chainStore, crlStore, 0, 0);
+        if(ret == FALSE) {
+            xmlSecMSCngLastError("CertAddStoreToCollection(crlStore)", NULL);
+            goto done;
+        }
     }
 
     /* build a chain using CertGetCertificateChain
@@ -773,7 +897,7 @@ xmlSecMSCngX509StoreVerifyCertificate(xmlSecMSCngX509StoreCtxPtr ctx, PCCERT_CON
     HCERTSTORE certStore, xmlSecKeyInfoCtx* keyInfoCtx
 ) {
     FILETIME timeContainer;
-    FILETIME* time = &timeContainer;
+    FILETIME* time;
     int ret;
 
     xmlSecAssert2(ctx != NULL, -1);
@@ -789,14 +913,15 @@ xmlSecMSCngX509StoreVerifyCertificate(xmlSecMSCngX509StoreCtxPtr ctx, PCCERT_CON
         return(1);
     }
 
-    /* do we need to check certificate notBefore/notAfter times? */
-    if(keyInfoCtx->certsVerificationTime > 0) {
-        xmlSecMSCngUnixTimeToFileTime(keyInfoCtx->certsVerificationTime, time);
-    } else if ((keyInfoCtx->flags & XMLSEC_KEYINFO_FLAGS_X509DATA_SKIP_TIME_CHECKS) != 0) {
-        time = NULL;
-    } else {
-        /* current time */
-        GetSystemTimeAsFileTime(time);
+    time = xmlSecMSCngX509StoreGetVerificationTime(keyInfoCtx, &timeContainer);
+
+    /* check certificate revocation against externally loaded CRLs */
+    if(ctx->crlMemStore != NULL) {
+        ret = xmlSecMSCngCheckRevocation(ctx->crlMemStore, cert, time);
+        if(ret < 0) {
+            xmlSecInternalError("xmlSecMSCngCheckRevocation", NULL);
+            return(-1);
+        }
     }
 
     /* verify based on the own trusted certificates */
@@ -811,7 +936,7 @@ xmlSecMSCngX509StoreVerifyCertificate(xmlSecMSCngX509StoreCtxPtr ctx, PCCERT_CON
     }
 
     /* verify based on the system certificates */
-    ret = xmlSecMSCngX509StoreVerifyCertificateSystem(cert, time, ctx->untrusted, certStore);
+    ret = xmlSecMSCngX509StoreVerifyCertificateSystem(cert, time, ctx->untrusted, certStore, ctx->crlMemStore);
     if (ret < 0) {
         xmlSecInternalError("xmlSecMSCngX509StoreVerifyCertificateSystem", NULL);
         return(-1);
@@ -882,6 +1007,140 @@ xmlSecMSCngX509StoreVerifyKey(xmlSecKeyDataStorePtr store, xmlSecKeyPtr key, xml
     }
 
     /* success */
+    return(1);
+}
+
+/**
+ * xmlSecMSCngX509StoreVerifyCrl:
+ * @store:              the pointer to X509 key data store klass.
+ * @pCrl:               the CRL to verify.
+ * @keyInfoCtx:         the key info context for verification parameters.
+ *
+ * Verifies @pCrl by checking:
+ * - The CRL signature is valid (signed by a trusted issuer certificate)
+ * - thisUpdate <= verification_time <= nextUpdate
+ *
+ * Returns: 1 if verified, 0 if not verified, or a negative value if an error occurs.
+ */
+int
+xmlSecMSCngX509StoreVerifyCrl(xmlSecKeyDataStorePtr store, PCCRL_CONTEXT pCrl,
+    xmlSecKeyInfoCtxPtr keyInfoCtx
+) {
+    xmlSecMSCngX509StoreCtxPtr ctx;
+    PCCERT_CONTEXT issuerCert = NULL;
+    FILETIME timeContainer;
+    FILETIME* time;
+    BOOL verified = FALSE;
+    int ret;
+
+    xmlSecAssert2(xmlSecKeyDataStoreCheckId(store, xmlSecMSCngX509StoreId), -1);
+    xmlSecAssert2(pCrl != NULL, -1);
+    xmlSecAssert2(pCrl->pCrlInfo != NULL, -1);
+    xmlSecAssert2(keyInfoCtx != NULL, -1);
+
+    if ((keyInfoCtx->flags & XMLSEC_KEYINFO_FLAGS_X509DATA_DONT_VERIFY_CERTS) != 0) {
+        return(1);
+    }
+
+    ctx = xmlSecMSCngX509StoreGetCtx(store);
+    xmlSecAssert2(ctx != NULL, -1);
+
+    time = xmlSecMSCngX509StoreGetVerificationTime(keyInfoCtx, &timeContainer);
+
+    /* find the issuer certificate in the trusted store and verify the CRL signature */
+    issuerCert = CertFindCertificateInStore(ctx->trusted,
+        X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+        0,
+        CERT_FIND_SUBJECT_NAME,
+        &(pCrl->pCrlInfo->Issuer),
+        NULL);
+    while (issuerCert != NULL) {
+        verified = CryptVerifyCertificateSignatureEx(
+            (HCRYPTPROV_LEGACY)NULL,
+            X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+            CRYPT_VERIFY_CERT_SIGN_SUBJECT_CRL, (void*)pCrl,
+            CRYPT_VERIFY_CERT_SIGN_ISSUER_CERT, (void*)issuerCert,
+            0, NULL);
+        if (verified == TRUE) {
+            CertFreeCertificateContext(issuerCert);
+            issuerCert = NULL;
+            break;
+        }
+        /* try next matching cert; CertFindCertificateInStore frees issuerCert */
+        issuerCert = CertFindCertificateInStore(ctx->trusted,
+            X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+            0,
+            CERT_FIND_SUBJECT_NAME,
+            &(pCrl->pCrlInfo->Issuer),
+            issuerCert);
+    }
+
+    /* if not verified via trusted store, also search untrusted store (e.g. intermediate CAs) */
+    if (verified == FALSE) {
+        issuerCert = CertFindCertificateInStore(ctx->untrusted,
+            X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+            0,
+            CERT_FIND_SUBJECT_NAME,
+            &(pCrl->pCrlInfo->Issuer),
+            NULL);
+        while (issuerCert != NULL) {
+            if (CryptVerifyCertificateSignatureEx(
+                    (HCRYPTPROV_LEGACY)NULL,
+                    X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+                    CRYPT_VERIFY_CERT_SIGN_SUBJECT_CRL, (void*)pCrl,
+                    CRYPT_VERIFY_CERT_SIGN_ISSUER_CERT, (void*)issuerCert,
+                    0, NULL) == TRUE) {
+                /* verify that the issuer cert itself chains to a trusted root */
+                ret = xmlSecMSCngX509StoreVerifyCertificateOwn(issuerCert, time,
+                    ctx->trusted, ctx->untrusted, ctx->untrusted);
+                if (ret < 0) {
+                    xmlSecInternalError("xmlSecMSCngX509StoreVerifyCertificateOwn", NULL);
+                    CertFreeCertificateContext(issuerCert);
+                    return(-1);
+                }
+                if (ret == 1) {
+                    verified = TRUE;
+                    CertFreeCertificateContext(issuerCert);
+                    issuerCert = NULL;
+                    break;
+                }
+            }
+            /* try next matching cert; CertFindCertificateInStore frees issuerCert */
+            issuerCert = CertFindCertificateInStore(ctx->untrusted,
+                X509_ASN_ENCODING | PKCS_7_ASN_ENCODING,
+                0,
+                CERT_FIND_SUBJECT_NAME,
+                &(pCrl->pCrlInfo->Issuer),
+                issuerCert);
+        }
+    }
+
+    if (verified == FALSE) {
+        xmlSecOtherError(XMLSEC_ERRORS_R_CERT_VERIFY_FAILED,
+            xmlSecKeyDataStoreGetName(store),
+            "CRL signature verification failed");
+        return(0);
+    }
+
+    /* check time validity */
+    if (time != NULL) {
+        if (CompareFileTime(time, &(pCrl->pCrlInfo->ThisUpdate)) < 0) {
+            xmlSecOtherError(XMLSEC_ERRORS_R_CERT_VERIFY_FAILED,
+                xmlSecKeyDataStoreGetName(store),
+                "CRL is not yet valid (thisUpdate is in the future)");
+            return(0);
+        }
+        if ((pCrl->pCrlInfo->NextUpdate.dwLowDateTime != 0) ||
+                (pCrl->pCrlInfo->NextUpdate.dwHighDateTime != 0)) {
+            if (CompareFileTime(time, &(pCrl->pCrlInfo->NextUpdate)) > 0) {
+                xmlSecOtherError(XMLSEC_ERRORS_R_CERT_VERIFY_FAILED,
+                    xmlSecKeyDataStoreGetName(store),
+                    "CRL has expired (nextUpdate is in the past)");
+                return(0);
+            }
+        }
+    }
+
     return(1);
 }
 

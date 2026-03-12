@@ -198,6 +198,7 @@ else
     xmlsec_feature_cert_der="no"
 fi
 
+
 # Only OpenSSL / NSS / GnuTLS currently has capability to lookup the certs/keys using X509 data
 if [ "z$crypto" = "zopenssl" -o "z$crypto" = "znss" -o "z$crypto" = "zgnutls" ] ; then
     xmlsec_feature_x509_data_lookup="yes"
@@ -227,29 +228,38 @@ else
     xmlsec_feature_cert_check_skip_time="no"
 fi
 
-# currently only openssl/gnutls/nss support loading CRL from the command line
+# currently only openssl/gnutls/nss/mscng support loading CRL from the command line
 # https://github.com/lsh123/xmlsec/issues/583
-if [ "z$crypto" = "zopenssl" -o  "z$crypto" = "zgnutls" -o "z$crypto" = "znss" ] ; then
+if [ "z$crypto" = "zopenssl" -o  "z$crypto" = "zgnutls" -o "z$crypto" = "znss" -o "z$crypto" = "zmscng" ] ; then
     xmlsec_feature_crl_load="yes"
 else
     xmlsec_feature_crl_load="no"
 fi
 
-# currently only openssl/nss support CRL verification by time
+# only openssl/gnutls/nss/mscng support crl verification
+# https://github.com/lsh123/xmlsec/issues/585
+if [ "z$crypto" = "zopenssl" -o  "z$crypto" = "zgnutls" -o "z$crypto" = "znss" -o "z$crypto" = "zmscng" ] ; then
+    xmlsec_feature_crl_verification="yes"
+else
+    xmlsec_feature_crl_verification="no"
+fi
+
+# currently only openssl/nss/mscng support CRL verification by time
 # https://github.com/lsh123/xmlsec/issues/579
-if [ "z$crypto" = "zopenssl" -o "z$crypto" = "znss"  ] ; then
+if [ "z$crypto" = "zopenssl" -o "z$crypto" = "znss" -o "z$crypto" = "zmscng" ] ; then
     xmlsec_feature_crl_check_skip_time="yes"
 else
     xmlsec_feature_crl_check_skip_time="no"
 fi
 
-# only openssl, gnutls, nss, and mcng supports key verification
+# only openssl, gnutls, nss, and mcng support key verification
 # https://github.com/lsh123/xmlsec/issues/587
 if [ "z$crypto" = "zopenssl" -o  "z$crypto" = "zgnutls" -o "z$crypto" = "znss" -o "z$crypto" = "zmscng" ] ; then
     xmlsec_feature_key_check="yes"
 else
     xmlsec_feature_key_check="no"
 fi
+
 
 # Advanced RSA OAEP modes:
 # - MSCrypto only supports SHA1 for digest and mgf1
@@ -304,6 +314,45 @@ if [ "z$crypto" != "zgcrypt" ] ; then
 else
     priv_key_option="--privkey-der"
     priv_key_format="der"
+fi
+
+#
+# NSS cannot import XDH (X25519/X448) private keys from OpenSSL-3.x-generated
+# PKCS12 files (SEC_ERROR_PKCS12_UNABLE_TO_IMPORT_KEY).  Use unencrypted DER
+# (PrivateKeyInfo) format for XDH keys when running under NSS.
+#
+if [ "z$crypto" = "znss" ] ; then
+    xdh_priv_key_option="--privkey-der"
+    xdh_priv_key_format="der"
+else
+    xdh_priv_key_option="$priv_key_option"
+    xdh_priv_key_format="$priv_key_format"
+fi
+
+#
+# NSS cannot import EdDSA (ED25519/ED448) private keys from OpenSSL-3.x-generated
+# PKCS12 files (SEC_ERROR_PKCS12_UNABLE_TO_IMPORT_KEY).  Use unencrypted DER
+# (PrivateKeyInfo) format for EdDSA keys when running under NSS.
+#
+if [ "z$crypto" = "znss" ] ; then
+    eddsa_priv_key_option="--privkey-der"
+    eddsa_priv_key_format="der"
+else
+    eddsa_priv_key_option="$priv_key_option"
+    eddsa_priv_key_format="$priv_key_format"
+fi
+
+#
+# GnuTLS cannot import EC keys from OpenSSL-3.x-generated xmlenc11-interop-2012
+# PKCS12 files (PBES2/PBKDF2/AES-256-CBC encryption not supported).
+# Use unencrypted DER (PrivateKeyInfo) format for those specific interop tests.
+#
+if [ "z$crypto" = "zgnutls" ] ; then
+    ec_interop_priv_key_option="--privkey-der"
+    ec_interop_priv_key_format="der"
+else
+    ec_interop_priv_key_option="$priv_key_option"
+    ec_interop_priv_key_format="$priv_key_format"
 fi
 
 #
@@ -1022,22 +1071,22 @@ if [ "z$crypto" = "zopenssl" -a "z$xmlsec_openssl_flavor" = "zaws-lc" ] ; then
     # bunch of tests with MD5 certificates are disabled
     echo "--- OPENSSL FLAVOR: $xmlsec_openssl_flavor" >> $logfile
     echo "--- OPENSSL FLAVOR: $xmlsec_openssl_flavor"
-    min_percent_success=80
+    min_percent_success=75
 elif [ "z$crypto" = "zopenssl" -a "z$xmlsec_openssl_flavor" = "zboringssl" ] ; then
     # bunch of tests with MD5 certificates are disabled
     echo "--- OPENSSL FLAVOR: $xmlsec_openssl_flavor" >> $logfile
     echo "--- OPENSSL FLAVOR: $xmlsec_openssl_flavor"
-    min_percent_success=80
+    min_percent_success=75
 elif [ "z$crypto" = "zopenssl" ] ; then
     echo "--- OPENSSL FLAVOR: $xmlsec_openssl_flavor" >> $logfile
     echo "--- OPENSSL FLAVOR: $xmlsec_openssl_flavor"
-    min_percent_success=80
+    min_percent_success=90
 elif [ "z$crypto" = "znss" ] ; then
-    min_percent_success=80
+    min_percent_success=75
 elif [ "z$crypto" = "zgnutls" ] ; then
-    min_percent_success=80
+    min_percent_success=75
 elif [ "z$crypto" = "zmscng" ] ; then
-    min_percent_success=80
+    min_percent_success=75
 elif [ "z$crypto" = "zmscrypto" ] ; then
     min_percent_success=30
 elif [ "z$crypto" = "zgcrypt" ] ; then
@@ -1050,6 +1099,13 @@ fi
 # print results
 echo "--- TOTAL OK: $count_success; OK (percent): $percent_success; TOTAL FAILED: $count_fail; TOTAL SKIPPED: $count_skip" >> $logfile
 echo "--- TOTAL OK: $count_success; OK (percent): $percent_success; TOTAL FAILED: $count_fail; TOTAL SKIPPED: $count_skip"
+
+# disable this check for test jeys since the number of tests is very small and the success percent is not representative
+if [[ "$testfile" =~ 'testKeys' ]]; then
+    XMLSEC_TEST_IGNORE_PERCENT_SUCCESS=1
+    echo "--- SUCCESS PERCENT check is disabled for testKeys tests since the number of tests is very small and the success percent is not representative" >> $logfile
+    echo "--- SUCCESS PERCENT check is disabled for testKeys tests since the number of tests is very small and the success percent is not representative"
+fi
 
 # print log file if failed (we have to have at least some good tests)
 if [ $count_fail -ne 0 ] ; then

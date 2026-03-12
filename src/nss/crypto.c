@@ -109,9 +109,17 @@ xmlSecCryptoGetFunctions_nss(void) {
     gXmlSecNssFunctions->keyDataAesGetKlass             = xmlSecNssKeyDataAesGetKlass;
 #endif /* XMLSEC_NO_AES */
 
+#ifndef XMLSEC_NO_CAMELLIA
+    gXmlSecNssFunctions->keyDataCamelliaGetKlass        = xmlSecNssKeyDataCamelliaGetKlass;
+#endif /* XMLSEC_NO_CAMELLIA */
+
 #ifndef XMLSEC_NO_DES
     gXmlSecNssFunctions->keyDataDesGetKlass             = xmlSecNssKeyDataDesGetKlass;
 #endif /* XMLSEC_NO_DES */
+
+#ifndef XMLSEC_NO_CHACHA20
+    gXmlSecNssFunctions->keyDataChaCha20GetKlass        = xmlSecNssKeyDataChaCha20GetKlass;
+#endif /* XMLSEC_NO_CHACHA20 */
 
 #ifndef XMLSEC_NO_DSA
     gXmlSecNssFunctions->keyDataDsaGetKlass             = xmlSecNssKeyDataDsaGetKlass;
@@ -128,6 +136,14 @@ xmlSecCryptoGetFunctions_nss(void) {
 #ifndef XMLSEC_NO_PBKDF2
     gXmlSecNssFunctions->keyDataPbkdf2GetKlass          = xmlSecNssKeyDataPbkdf2GetKlass;
 #endif /* XMLSEC_NO_PBKDF2 */
+
+#ifndef XMLSEC_NO_CONCATKDF
+    gXmlSecNssFunctions->keyDataConcatKdfGetKlass       = xmlSecNssKeyDataConcatKdfGetKlass;
+#endif /* XMLSEC_NO_CONCATKDF */
+
+#ifndef XMLSEC_NO_HKDF
+    gXmlSecNssFunctions->keyDataHkdfGetKlass            = xmlSecNssKeyDataHkdfGetKlass;
+#endif /* XMLSEC_NO_HKDF */
 
 #ifndef XMLSEC_NO_RSA
     gXmlSecNssFunctions->keyDataRsaGetKlass             = xmlSecNssKeyDataRsaGetKlass;
@@ -173,6 +189,19 @@ xmlSecCryptoGetFunctions_nss(void) {
     gXmlSecNssFunctions->transformKWAes256GetKlass      = xmlSecNssTransformKWAes256GetKlass;
 #endif /* XMLSEC_NO_AES */
 
+    /******************************* Camellia ********************************/
+#ifndef XMLSEC_NO_CAMELLIA
+    /* cbc */
+    gXmlSecNssFunctions->transformCamellia128CbcGetKlass = xmlSecNssTransformCamellia128CbcGetKlass;
+    gXmlSecNssFunctions->transformCamellia192CbcGetKlass = xmlSecNssTransformCamellia192CbcGetKlass;
+    gXmlSecNssFunctions->transformCamellia256CbcGetKlass = xmlSecNssTransformCamellia256CbcGetKlass;
+
+    /* kw: uses Camellia ECB */
+    gXmlSecNssFunctions->transformKWCamellia128GetKlass  = xmlSecNssTransformKWCamellia128GetKlass;
+    gXmlSecNssFunctions->transformKWCamellia192GetKlass  = xmlSecNssTransformKWCamellia192GetKlass;
+    gXmlSecNssFunctions->transformKWCamellia256GetKlass  = xmlSecNssTransformKWCamellia256GetKlass;
+#endif /* XMLSEC_NO_CAMELLIA */
+
     /******************************* DES ********************************/
 #ifndef XMLSEC_NO_DES
     /* cbc */
@@ -181,6 +210,11 @@ xmlSecCryptoGetFunctions_nss(void) {
     /* kw: uses DES3_CBC */
     gXmlSecNssFunctions->transformKWDes3GetKlass        = xmlSecNssTransformKWDes3GetKlass;
 #endif /* XMLSEC_NO_DES */
+
+    /******************************* CHACHA20 ********************************/
+#ifndef XMLSEC_NO_CHACHA20
+    gXmlSecNssFunctions->transformChaCha20Poly1305GetKlass  = xmlSecNssTransformChaCha20Poly1305GetKlass;
+#endif /* XMLSEC_NO_CHACHA20 */
 
     /******************************* DSA ********************************/
 #ifndef XMLSEC_NO_DSA
@@ -194,6 +228,10 @@ xmlSecCryptoGetFunctions_nss(void) {
 
     /******************************* ECDSA ******************************/
 #ifndef XMLSEC_NO_EC
+    gXmlSecNssFunctions->keyDataEcGetKlass          = xmlSecNsskeyDataEcGetKlass;
+
+    gXmlSecNssFunctions->transformEcdhGetKlass      = xmlSecNssTransformEcdhGetKlass;
+
 #ifndef XMLSEC_NO_SHA1
     gXmlSecNssFunctions->transformEcdsaSha1GetKlass = xmlSecNssTransformEcdsaSha1GetKlass;
 #endif /* XMLSEC_NO_SHA1 */
@@ -210,6 +248,18 @@ xmlSecCryptoGetFunctions_nss(void) {
     gXmlSecNssFunctions->transformEcdsaSha512GetKlass = xmlSecNssTransformEcdsaSha512GetKlass;
 #endif /* XMLSEC_NO_SHA512 */
 #endif /* XMLSEC_NO_EC */
+
+    /******************************* EdDSA ********************************/
+#ifndef XMLSEC_NO_EDDSA
+    gXmlSecNssFunctions->keyDataEdDSAGetKlass   = xmlSecNssKeyDataEdDSAGetKlass;
+    gXmlSecNssFunctions->transformEdDSAEd25519GetKlass = xmlSecNssTransformEdDSAEd25519GetKlass;
+#endif /* XMLSEC_NO_EDDSA */
+
+    /******************************* XDH ********************************/
+#ifndef XMLSEC_NO_XDH
+    gXmlSecNssFunctions->keyDataXdhGetKlass      = xmlSecNssKeyDataXdhGetKlass;
+    gXmlSecNssFunctions->transformX25519GetKlass = xmlSecNssTransformX25519GetKlass;
+#endif /* XMLSEC_NO_XDH */
 
     /******************************* HMAC ********************************/
 #ifndef XMLSEC_NO_HMAC
@@ -248,6 +298,15 @@ xmlSecCryptoGetFunctions_nss(void) {
 #ifndef XMLSEC_NO_PBKDF2
     gXmlSecNssFunctions->transformPbkdf2GetKlass       = xmlSecNssTransformPbkdf2GetKlass;
 #endif /* XMLSEC_NO_PBKDF2 */
+
+    /******************************* ConcatKDF ******************************/
+#ifndef XMLSEC_NO_CONCATKDF
+    gXmlSecNssFunctions->transformConcatKdfGetKlass    = xmlSecNssTransformConcatKdfGetKlass;
+#endif /* XMLSEC_NO_CONCATKDF */
+
+#ifndef XMLSEC_NO_HKDF
+    gXmlSecNssFunctions->transformHkdfGetKlass         = xmlSecNssTransformHkdfGetKlass;
+#endif /* XMLSEC_NO_HKDF */
 
     /******************************* RSA ********************************/
 #ifndef XMLSEC_NO_RSA
@@ -348,6 +407,7 @@ xmlSecCryptoGetFunctions_nss(void) {
     gXmlSecNssFunctions->cryptoAppKeysMngrCertLoad      = xmlSecNssAppKeysMngrCertLoad;
     gXmlSecNssFunctions->cryptoAppKeysMngrCertLoadMemory= xmlSecNssAppKeysMngrCertLoadMemory;
     gXmlSecNssFunctions->cryptoAppKeysMngrCrlLoad       = xmlSecNssAppKeysMngrCrlLoad;
+    gXmlSecNssFunctions->cryptoAppKeysMngrCrlLoadAndVerify= xmlSecNssAppKeysMngrCrlLoadAndVerify;
     gXmlSecNssFunctions->cryptoAppKeysMngrCrlLoadMemory = xmlSecNssAppKeysMngrCrlLoadMemory;
     gXmlSecNssFunctions->cryptoAppPkcs12Load            = xmlSecNssAppPkcs12Load;
     gXmlSecNssFunctions->cryptoAppPkcs12LoadMemory      = xmlSecNssAppPkcs12LoadMemory;
@@ -422,6 +482,13 @@ xmlSecNssUpdateAvailableCryptoTransforms(xmlSecCryptoDLFunctionsPtr functions) {
         functions->transformDsaSha256GetKlass       = NULL;
     }
 
+    /******************************* XDH ********************************/
+#ifndef XMLSEC_NO_XDH
+    if(xmlSecNssCryptoCheckMechanism(CKM_ECDH1_DERIVE) == 0) {
+        functions->transformX25519GetKlass = NULL;
+    }
+#endif /* XMLSEC_NO_XDH */
+
     /******************************* ECDSA ******************************/
     if (xmlSecNssCryptoCheckAlgorithm(SEC_OID_ANSIX962_ECDSA_SHA1_SIGNATURE) == 0) {
         functions->transformEcdsaSha1GetKlass = NULL;
@@ -438,6 +505,14 @@ xmlSecNssUpdateAvailableCryptoTransforms(xmlSecCryptoDLFunctionsPtr functions) {
     if (xmlSecNssCryptoCheckAlgorithm(SEC_OID_ANSIX962_ECDSA_SHA512_SIGNATURE) == 0) {
         functions->transformEcdsaSha512GetKlass = NULL;
     }
+
+    /******************************* EdDSA ********************************/
+#ifndef XMLSEC_NO_EDDSA
+    /* Check if EdDSA is available in this NSS version */
+    if (xmlSecNssCryptoCheckAlgorithm(SEC_OID_ED25519_SIGNATURE) == 0) {
+        functions->transformEdDSAEd25519GetKlass = NULL;
+    }
+#endif /* XMLSEC_NO_EDDSA */
 
     /******************************* HMAC ********************************/
     if (xmlSecNssCryptoCheckMechanism(CKM_MD5_HMAC) == 0) {

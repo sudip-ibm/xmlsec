@@ -26,6 +26,7 @@
 #include <secerr.h>
 #include <secder.h>
 #include <sechash.h>
+#include <keyhi.h>
 
 #include <xmlsec/xmlsec.h>
 #include <xmlsec/keys.h>
@@ -40,6 +41,7 @@
 #include <xmlsec/nss/x509.h>
 
 #include "../cast_helpers.h"
+#include "../x509_helpers.h"
 #include "private.h"
 
 /**************************************************************************
@@ -75,9 +77,6 @@ XMLSEC_KEY_DATA_STORE_DECLARE(NssX509Store, xmlSecNssX509StoreCtx)
 
 static int              xmlSecNssX509StoreInitialize    (xmlSecKeyDataStorePtr store);
 static void             xmlSecNssX509StoreFinalize      (xmlSecKeyDataStorePtr store);
-static int              xmlSecNssNumToItem              (PLArenaPool *arena,
-                                                         SECItem *it,
-                                                         PRUint64 num);
 
 
 static xmlSecKeyDataStoreKlass xmlSecNssX509StoreKlass = {
@@ -403,12 +402,22 @@ xmlSecNssX509StoreFindChildCert(CERTCertificate* cert, CERTCertList* certs) {
      return(NULL);
 }
 
+static int64
+xmlSecNssX509SGetVerificationTime(xmlSecKeyInfoCtx* keyInfoCtx) {
+    xmlSecAssert2(keyInfoCtx != NULL, 0);
+
+    if(keyInfoCtx->certsVerificationTime > 0) {
+        /* convert the time since epoch in seconds to microseconds */
+        return (int64)keyInfoCtx->certsVerificationTime * PR_USEC_PER_SEC;
+    } else {
+        return PR_Now();
+    }
+}
 
 /* returns 1 if verified, 0 if not, an < 0 if an error occurs */
 static int
 xmlSecNssX509StoreVerifyCert(CERTCertDBHandle *handle, CERTCertificate* cert, xmlSecKeyInfoCtxPtr keyInfoCtx) {
-    int64 timeboundary;
-    int64 tmp1, tmp2;
+    int64 verificationTime;
     SECStatus status;
     PRErrorCode err;
 
@@ -421,21 +430,14 @@ xmlSecNssX509StoreVerifyCert(CERTCertDBHandle *handle, CERTCertificate* cert, xm
         return(1);
     }
 
-    if(keyInfoCtx->certsVerificationTime > 0) {
-        /* convert the time since epoch in seconds to microseconds */
-        LL_UI2L(timeboundary, keyInfoCtx->certsVerificationTime);
-        tmp1 = (int64)PR_USEC_PER_SEC;
-        tmp2 = timeboundary;
-        LL_MUL(timeboundary, tmp1, tmp2);
-    } else {
-        timeboundary = PR_Now();
-    }
+    /* get verification time */
+    verificationTime = xmlSecNssX509SGetVerificationTime(keyInfoCtx);
 
     /* it's important to set the usage here, otherwise no real verification
      * is performed. */
     status = CERT_VerifyCertificate(handle, cert, PR_FALSE,
                 certificateUsageEmailSigner,
-                timeboundary , NULL, NULL, NULL);
+                verificationTime , NULL, NULL, NULL);
     if(status == SECSuccess) {
         return(1);
     }
@@ -645,7 +647,7 @@ xmlSecNssX509StoreAdoptCert(xmlSecKeyDataStorePtr store, CERTCertificate* cert, 
             xmlSecNssError("CERT_DecodeTrustString", xmlSecKeyDataStoreGetName(store));
             return(-1);
         }
-        CERT_ChangeCertTrust(CERT_GetDefaultCertDB(), cert, &trust);
+        status = CERT_ChangeCertTrust(CERT_GetDefaultCertDB(), cert, &trust);
         if(status != SECSuccess) {
             xmlSecNssError("CERT_ChangeCertTrust", xmlSecKeyDataStoreGetName(store));
             return(-1);
@@ -681,7 +683,192 @@ xmlSecNssX509StoreAdoptCrl(xmlSecKeyDataStorePtr store, CERTSignedCrl * crl) {
         xmlSecInternalError("xmlSecNssX509CrlListAdoptCrl", xmlSecKeyDataStoreGetName(store));
         return(-1);
     }
+    ++ctx->numCrls;
     return(0);
+}
+
+/* Helper function to verify CRL time validity */
+static int
+xmlSecNssX509VerifyCRLTimeValidity(CERTSignedCrl* crl, xmlSecKeyInfoCtxPtr keyInfoCtx) {
+    PRTime verification_time;
+    PRTime thisUpdate = 0;
+    PRTime nextUpdate = 0;
+    time_t verification_ts;
+
+    xmlSecAssert2(crl != NULL, -1);
+    xmlSecAssert2(keyInfoCtx != NULL, -1);
+
+    /* Get verification time */
+    if(keyInfoCtx->certsVerificationTime > 0) {
+        verification_ts = keyInfoCtx->certsVerificationTime;
+    } else {
+        verification_ts = time(NULL);
+    }
+
+    /* Convert time_t to PRTime (microseconds since epoch) */
+    verification_time = ((PRTime)verification_ts) * PR_USEC_PER_SEC;
+
+    /* Get thisUpdate */
+    if(crl->crl.lastUpdate.data != NULL) {
+        SECStatus rv = DER_DecodeTimeChoice(&thisUpdate, &(crl->crl.lastUpdate));
+        if(rv != SECSuccess) {
+            xmlSecNssError("DER_DecodeTimeChoice(thisUpdate)", NULL);
+            return(-1);
+        }
+
+        /* Verify thisUpdate <= verification_time */
+        if(thisUpdate > verification_time) {
+            /* CRL not yet valid */
+            xmlSecOtherError(XMLSEC_ERRORS_R_CRL_NOT_YET_VALID, NULL, NULL);
+            return(0);
+        }
+    }
+
+    /* Get nextUpdate */
+    if(crl->crl.nextUpdate.data != NULL) {
+        SECStatus rv = DER_DecodeTimeChoice(&nextUpdate, &(crl->crl.nextUpdate));
+        if(rv != SECSuccess) {
+            xmlSecNssError("DER_DecodeTimeChoice(nextUpdate)", NULL);
+            return(-1);
+        }
+
+        /* Verify verification_time <= nextUpdate */
+        if(verification_time > nextUpdate) {
+            /* CRL expired */
+            xmlSecOtherError(XMLSEC_ERRORS_R_CRL_HAS_EXPIRED, NULL, NULL);
+            return(0);
+        }
+    }
+
+    /* Success */
+    return(1);
+}
+
+/* Helper function to verify CRL signature */
+static int
+xmlSecNssX509VerifyCRLSignature(xmlSecNssX509StoreCtxPtr ctx, CERTSignedCrl* crl, xmlSecKeyInfoCtxPtr keyInfoCtx) {
+    CERTCertificate* issuer_cert = NULL;
+    SECKEYPublicKey* pubkey = NULL;
+    SECStatus rv;
+    int64 verificationTime;
+    int res = -1;
+
+    xmlSecAssert2(ctx != NULL, -1);
+    xmlSecAssert2(crl != NULL, -1);
+    xmlSecAssert2(keyInfoCtx != NULL, -1);
+
+    /* Find the CRL issuer certificate in the store */
+    if((crl->crl.derName.data != NULL) && (crl->crl.derName.len > 0)) {
+        /* Search in the certs list */
+        if(ctx->certsList != NULL) {
+            CERTCertListNode* node;
+            for(node = CERT_LIST_HEAD(ctx->certsList); !CERT_LIST_END(node, ctx->certsList); node = CERT_LIST_NEXT(node)) {
+                if(node->cert != NULL) {
+                    /* Compare CRL issuer (derName) with certificate subject (derSubject) */
+                    if(SECITEM_CompareItem(&(crl->crl.derName), &(node->cert->derSubject)) == SECEqual) {
+                        issuer_cert = CERT_DupCertificate(node->cert);
+                        break;
+                    }
+                }
+            }
+        }
+
+        /* If not found in store, try to find in NSS database */
+        if(issuer_cert == NULL) {
+            issuer_cert = CERT_FindCertByName(CERT_GetDefaultCertDB(), &(crl->crl.derName));
+        }
+    }
+
+    if(issuer_cert == NULL) {
+        xmlSecOtherError(XMLSEC_ERRORS_R_CERT_NOT_FOUND, NULL, "CRL issuer certificate not found");
+        goto done;
+    }
+
+    /* Get the public key from the issuer certificate */
+    pubkey = CERT_ExtractPublicKey(issuer_cert);
+    if(pubkey == NULL) {
+        xmlSecNssError("CERT_ExtractPublicKey", NULL);
+        goto done;
+    }
+
+    /* get verification time */
+    verificationTime = xmlSecNssX509SGetVerificationTime(keyInfoCtx);
+
+    /* Verify the CRL signature */
+    rv = CERT_VerifySignedData(&(crl->signatureWrap), issuer_cert, verificationTime, NULL);
+    if(rv != SECSuccess) {
+        xmlSecNssError("CERT_VerifySignedData", NULL);
+        /* Verification failed */
+        res = 0;
+        goto done;
+    }
+
+    /* Success: verified */
+    res = 1;
+
+done:
+    if(pubkey != NULL) {
+        SECKEY_DestroyPublicKey(pubkey);
+    }
+    if(issuer_cert != NULL) {
+        CERT_DestroyCertificate(issuer_cert);
+    }
+    return(res);
+}
+
+/**
+ * xmlSecNssX509StoreVerifyCrl:
+ * @store:              the pointer to X509 key data store klass.
+ * @crl:                the CRL to verify.
+ * @keyInfoCtx:         the key info context for verification parameters.
+ *
+ * Verifies @crl by checking:
+ * 1. Signature is valid (signed by issuer cert in store)
+ * 2. thisUpdate <= verification_time <= nextUpdate
+ *
+ * Returns: 1 if verified, 0 if not verified, or a negative value on error.
+ */
+int
+xmlSecNssX509StoreVerifyCrl(xmlSecKeyDataStorePtr store, CERTSignedCrl* crl,
+    xmlSecKeyInfoCtxPtr keyInfoCtx
+) {
+    xmlSecNssX509StoreCtxPtr ctx;
+    int ret;
+
+    xmlSecAssert2(xmlSecKeyDataStoreCheckId(store, xmlSecNssX509StoreId), -1);
+    xmlSecAssert2(crl != NULL, -1);
+    xmlSecAssert2(keyInfoCtx != NULL, -1);
+
+    /* do we even need to verify the CRL? */
+    if((keyInfoCtx->flags & XMLSEC_KEYINFO_FLAGS_X509DATA_DONT_VERIFY_CERTS) != 0) {
+        return(1);
+    }
+
+    ctx = xmlSecNssX509StoreGetCtx(store);
+    xmlSecAssert2(ctx != NULL, -1);
+
+    /* Verify time validity first (fast check) */
+    ret = xmlSecNssX509VerifyCRLTimeValidity(crl, keyInfoCtx);
+    if(ret < 0) {
+        xmlSecInternalError("xmlSecNssX509VerifyCRLTimeValidity", xmlSecKeyDataStoreGetName(store));
+        return(-1);
+    } else if(ret != 1) {
+        /* Time validity check failed */
+        return(0);
+    }
+
+    /* Verify CRL signature (slower check) */
+    ret = xmlSecNssX509VerifyCRLSignature(ctx, crl, keyInfoCtx);
+    if(ret < 0) {
+        xmlSecInternalError("xmlSecNssX509VerifyCRLSignature", xmlSecKeyDataStoreGetName(store));
+        return(-1);
+    } else if(ret != 1) {
+        /* Signature verification failed */
+        return(0);
+    }
+
+    /* Success */
+    return(1);
 }
 
 static int
@@ -817,49 +1004,6 @@ xmlSecNssX509FindCert(CERTCertList* certsList, xmlSecNssX509FindCertCtxPtr findC
     return(cert);
 }
 
-/* code lifted from NSS */
-static int
-xmlSecNssNumToItem(PLArenaPool *arena, SECItem *it, PRUint64 ui)
-{
-    unsigned char bb[9];
-    unsigned int bb_len, zeros_len;
-    int res;
-
-    xmlSecAssert2(arena != NULL, -1);
-    xmlSecAssert2(it != NULL, -1);
-
-    bb[0] = 0; /* important: we should have 0 at the beginning! */
-    bb[1] = (unsigned char) (ui >> 56);
-    bb[2] = (unsigned char) (ui >> 48);
-    bb[3] = (unsigned char) (ui >> 40);
-    bb[4] = (unsigned char) (ui >> 32);
-    bb[5] = (unsigned char) (ui >> 24);
-    bb[6] = (unsigned char) (ui >> 16);
-    bb[7] = (unsigned char) (ui >> 8);
-    bb[8] = (unsigned char) (ui);
-
-    /*
-    ** Small integers are encoded in a single byte. Larger integers
-    ** require progressively more space. Start from 1 because byte at
-    ** position 0 is zero
-    */
-    bb_len = sizeof(bb) / sizeof(bb[0]);
-    for(zeros_len = 1; (zeros_len < bb_len) && (bb[zeros_len] == 0); ++zeros_len) {
-    }
-
-    it->len = bb_len - (zeros_len - 1);
-    it->data = (unsigned char *)PORT_ArenaAlloc(arena, it->len * sizeof(bb[0]));
-    if (it->data == NULL) {
-        it->len = 0;
-        return (-1);
-    }
-
-    PORT_Memcpy(it->data, bb + (zeros_len - 1), it->len);
-    XMLSEC_SAFE_CAST_UINT_TO_INT(it->len, res, return(-1), NULL);
-
-    return(res);
-}
-
 xmlSecKeyPtr
 xmlSecNssX509FindKeyByValue(xmlSecPtrListPtr keysList, xmlSecKeyX509DataValuePtr x509Value) {
     xmlSecNssX509FindCertCtx findCertCtx;
@@ -970,6 +1114,37 @@ xmlSecNssX509GetDigestFromAlgorithm(const xmlChar* href) {
 }
 
 
+static int
+xmlSecNssX509SerialNumberRead(const xmlChar *str, SECItem *res, PLArenaPool *arena) {
+    xmlSecByte buf[XMLSEC_X509_MAX_SERIAL_NUMBER_BYTES];
+    xmlSecSize written = 0;
+    unsigned int uwritten;
+    int ret;
+
+    xmlSecAssert2(str != NULL, -1);
+    xmlSecAssert2(res != NULL, -1);
+    xmlSecAssert2(arena != NULL, -1);
+
+    ret = xmlSecX509SerialNumberRead(str, buf, sizeof(buf), &written);
+    if(ret < 0) {
+        xmlSecInternalError("xmlSecX509SerialNumberRead", NULL);
+        return(-1);
+    }
+    xmlSecAssert2(written > 0, -1);
+    XMLSEC_SAFE_CAST_SIZE_TO_UINT(written, uwritten, return(-1), NULL);
+
+    res->data = (unsigned char *)PORT_ArenaAlloc(arena, uwritten);
+    if(res->data == NULL) {
+        xmlSecNssError("PORT_ArenaAlloc", NULL);
+        return(-1);
+    }
+
+    memcpy(res->data, buf, written);
+    res->len = uwritten;
+    res->type = siBuffer;
+    return(0);
+}
+
 int xmlSecNssX509FindCertCtxInitialize(xmlSecNssX509FindCertCtxPtr ctx,
     const xmlChar *subjectName,
     const xmlChar *issuerName, const xmlChar *issuerSerial,
@@ -1035,15 +1210,9 @@ int xmlSecNssX509FindCertCtxInitialize(xmlSecNssX509FindCertCtxPtr ctx,
         ctx->issuerAndSN.derIssuer.data = ctx->issuerNameItem->data;
         ctx->issuerAndSN.derIssuer.len  = ctx->issuerNameItem->len;
 
-        /* TBD: serial num can be arbitrarily long */
-        if(PR_sscanf((char *)issuerSerial, "%llu", &(ctx->issuerSN)) != 1) {
-            xmlSecNssError("PR_sscanf(issuerSerial)", NULL);
-            xmlSecNssX509FindCertCtxFinalize(ctx);
-            return(-1);
-        }
-        ret = xmlSecNssNumToItem(ctx->arena, &(ctx->issuerAndSN.serialNumber), ctx->issuerSN);
-        if(ret <= 0) {
-            xmlSecInternalError("xmlSecNssNumToItem(serialNumber)", NULL);
+        ret = xmlSecNssX509SerialNumberRead(issuerSerial, &(ctx->issuerAndSN.serialNumber), ctx->arena);
+        if(ret < 0) {
+            xmlSecInternalError("xmlSecNssX509SerialNumberRead", NULL);
             xmlSecNssX509FindCertCtxFinalize(ctx);
             return(-1);
         }

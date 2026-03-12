@@ -71,6 +71,9 @@ extern "C" {
 #define xmlSecTransformKWAes192Id               xmlSecOpenSSLTransformKWAes192Id
 #define xmlSecTransformKWAes256Id               xmlSecOpenSSLTransformKWAes256Id
 
+#define xmlSecTransformChaCha20Id               xmlSecOpenSSLTransformChaCha20Id
+#define xmlSecTransformChaCha20Poly1305Id       xmlSecOpenSSLTransformChaCha20Poly1305Id
+
 #define xmlSecTransformDes3CbcId                xmlSecOpenSSLTransformDes3CbcId
 #define xmlSecTransformKWDes3Id                 xmlSecOpenSSLTransformKWDes3Id
 
@@ -159,6 +162,7 @@ extern "C" {
 #define xmlSecCryptoAppKeysMngrCertLoadMemory   xmlSecOpenSSLAppKeysMngrCertLoadMemory
 #define xmlSecCryptoAppKeysMngrCrlLoad          xmlSecOpenSSLAppKeysMngrCrlLoad
 #define xmlSecCryptoAppKeysMngrCrlLoadMemory    xmlSecOpenSSLAppKeysMngrCrlLoadMemory
+#define xmlSecCryptoAppKeysMngrCrlLoadAndVerify xmlSecOpenSSLAppKeysMngrCrlLoadAndVerify
 #define xmlSecCryptoAppKeyLoadEx                xmlSecOpenSSLAppKeyLoadEx
 #define xmlSecCryptoAppPkcs12Load               xmlSecOpenSSLAppPkcs12Load
 #define xmlSecCryptoAppKeyCertLoad              xmlSecOpenSSLAppKeyCertLoad

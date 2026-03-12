@@ -38,6 +38,7 @@
 
 #include "private.h"
 #include "../cast_helpers.h"
+#include "../x509_helpers.h"
 
 
 /**************************************************************************
@@ -387,9 +388,6 @@ xmlSecMSCryptoX509StoreContainsCert(HCERTSTORE store, CERT_NAME_BLOB* name,
         CertFreeCertificateContext(storeCert);
         return(1);
     }
-
-    /* no luck */
-    return (0);
 }
 
 
@@ -424,7 +422,7 @@ xmlSecMSCryptoBuildCertChainManually (PCCERT_CONTEXT cert, LPFILETIME pfTime,
     if (!xmlSecMSCryptoCheckRevocation(certs, cert)) {
         xmlSecOtherError(XMLSEC_ERRORS_R_CRL_VERIFY_FAILED,
             xmlSecKeyDataStoreGetName(store),
-            "certificate revoked");;
+            "certificate revoked");
         return(FALSE);
     }
 

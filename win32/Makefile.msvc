@@ -170,8 +170,9 @@ XMLSEC_OBJS = \
 	$(XMLSEC_INTDIR)\keyinfo.obj \
 	$(XMLSEC_INTDIR)\keys.obj \
 	$(XMLSEC_INTDIR)\keysdata.obj \
+	$(XMLSEC_INTDIR)\keysdata_helpers.obj \
 	$(XMLSEC_INTDIR)\keysmngr.obj \
-	$(XMLSEC_INTDIR)\kw_aes_des.obj \
+	$(XMLSEC_INTDIR)\kw_helpers.obj \
 	$(XMLSEC_INTDIR)\list.obj \
 	$(XMLSEC_INTDIR)\membuf.obj \
 	$(XMLSEC_INTDIR)\nodeset.obj \
@@ -179,6 +180,7 @@ XMLSEC_OBJS = \
 	$(XMLSEC_INTDIR)\relationship.obj \
 	$(XMLSEC_INTDIR)\strings.obj \
 	$(XMLSEC_INTDIR)\templates.obj \
+	$(XMLSEC_INTDIR)\transform_helpers.obj \
 	$(XMLSEC_INTDIR)\transforms.obj \
 	$(XMLSEC_INTDIR)\xmldsig.obj \
 	$(XMLSEC_INTDIR)\xmlenc.obj \
@@ -186,7 +188,7 @@ XMLSEC_OBJS = \
 	$(XMLSEC_INTDIR)\xmltree.obj \
 	$(XMLSEC_INTDIR)\xpath.obj \
 	$(XMLSEC_INTDIR)\xslt.obj \
-	$(XMLSEC_INTDIR)\x509.obj
+	$(XMLSEC_INTDIR)\x509_helpers.obj
 XMLSEC_OBJS_A = \
 	$(XMLSEC_INTDIR_A)\app.obj\
 	$(XMLSEC_INTDIR_A)\base64.obj\
@@ -200,8 +202,9 @@ XMLSEC_OBJS_A = \
 	$(XMLSEC_INTDIR_A)\keyinfo.obj \
 	$(XMLSEC_INTDIR_A)\keys.obj \
 	$(XMLSEC_INTDIR_A)\keysdata.obj \
+	$(XMLSEC_INTDIR_A)\keysdata_helpers.obj \
 	$(XMLSEC_INTDIR_A)\keysmngr.obj \
-	$(XMLSEC_INTDIR_A)\kw_aes_des.obj \
+	$(XMLSEC_INTDIR_A)\kw_helpers.obj \
 	$(XMLSEC_INTDIR_A)\list.obj \
 	$(XMLSEC_INTDIR_A)\membuf.obj \
 	$(XMLSEC_INTDIR_A)\nodeset.obj \
@@ -209,6 +212,7 @@ XMLSEC_OBJS_A = \
 	$(XMLSEC_INTDIR_A)\relationship.obj \
 	$(XMLSEC_INTDIR_A)\strings.obj \
 	$(XMLSEC_INTDIR_A)\templates.obj \
+	$(XMLSEC_INTDIR_A)\transform_helpers.obj \
 	$(XMLSEC_INTDIR_A)\transforms.obj \
 	$(XMLSEC_INTDIR_A)\xmldsig.obj \
 	$(XMLSEC_INTDIR_A)\xmlenc.obj \
@@ -216,12 +220,13 @@ XMLSEC_OBJS_A = \
 	$(XMLSEC_INTDIR_A)\xmltree.obj \
 	$(XMLSEC_INTDIR_A)\xpath.obj \
 	$(XMLSEC_INTDIR_A)\xslt.obj \
-	$(XMLSEC_INTDIR_A)\x509.obj
+	$(XMLSEC_INTDIR_A)\x509_helpers.obj
 
 XMLSEC_OPENSSL_OBJS = \
 	$(XMLSEC_OPENSSL_INTDIR)\app.obj\
 	$(XMLSEC_OPENSSL_INTDIR)\ciphers.obj \
 	$(XMLSEC_OPENSSL_INTDIR)\crypto.obj \
+	$(XMLSEC_OPENSSL_INTDIR)\der_encoded_value.obj \
 	$(XMLSEC_OPENSSL_INTDIR)\digests.obj \
 	$(XMLSEC_OPENSSL_INTDIR)\evp.obj \
 	$(XMLSEC_OPENSSL_INTDIR)\hmac.obj \
@@ -229,7 +234,7 @@ XMLSEC_OPENSSL_OBJS = \
 	$(XMLSEC_OPENSSL_INTDIR)\key_agrmnt.obj \
 	$(XMLSEC_OPENSSL_INTDIR)\keysstore.obj \
 	$(XMLSEC_OPENSSL_INTDIR)\kt_rsa.obj \
-	$(XMLSEC_OPENSSL_INTDIR)\kw_aes.obj \
+	$(XMLSEC_OPENSSL_INTDIR)\kw_rfc_3394.obj \
 	$(XMLSEC_OPENSSL_INTDIR)\kw_des.obj \
 	$(XMLSEC_OPENSSL_INTDIR)\signatures.obj \
 	$(XMLSEC_OPENSSL_INTDIR)\signatures_legacy.obj \
@@ -241,6 +246,7 @@ XMLSEC_OPENSSL_OBJS_A = \
 	$(XMLSEC_OPENSSL_INTDIR_A)\app.obj\
 	$(XMLSEC_OPENSSL_INTDIR_A)\ciphers.obj \
 	$(XMLSEC_OPENSSL_INTDIR_A)\crypto.obj \
+	$(XMLSEC_OPENSSL_INTDIR_A)\der_encoded_value.obj \
 	$(XMLSEC_OPENSSL_INTDIR_A)\digests.obj \
 	$(XMLSEC_OPENSSL_INTDIR_A)\evp.obj \
 	$(XMLSEC_OPENSSL_INTDIR_A)\hmac.obj \
@@ -248,7 +254,7 @@ XMLSEC_OPENSSL_OBJS_A = \
 	$(XMLSEC_OPENSSL_INTDIR_A)\key_agrmnt.obj \
 	$(XMLSEC_OPENSSL_INTDIR_A)\keysstore.obj \
 	$(XMLSEC_OPENSSL_INTDIR_A)\kt_rsa.obj \
-	$(XMLSEC_OPENSSL_INTDIR_A)\kw_aes.obj \
+	$(XMLSEC_OPENSSL_INTDIR_A)\kw_rfc_3394.obj \
 	$(XMLSEC_OPENSSL_INTDIR_A)\kw_des.obj \
 	$(XMLSEC_OPENSSL_INTDIR_A)\signatures.obj \
 	$(XMLSEC_OPENSSL_INTDIR_A)\signatures_legacy.obj \
@@ -259,14 +265,18 @@ XMLSEC_OPENSSL_OBJS_A = \
 
 XMLSEC_NSS_OBJS = \
 	$(XMLSEC_NSS_INTDIR)\app.obj \
-	$(XMLSEC_NSS_INTDIR)\ciphers.obj \
+	$(XMLSEC_NSS_INTDIR)\ciphers_cbc.obj \
+	$(XMLSEC_NSS_INTDIR)\ciphers_aead.obj \
+	$(XMLSEC_NSS_INTDIR)\concatkdf.obj \
 	$(XMLSEC_NSS_INTDIR)\crypto.obj \
+	$(XMLSEC_NSS_INTDIR)\der_encoded_value.obj \
 	$(XMLSEC_NSS_INTDIR)\digests.obj \
 	$(XMLSEC_NSS_INTDIR)\hmac.obj \
 	$(XMLSEC_NSS_INTDIR)\keysstore.obj \
 	$(XMLSEC_NSS_INTDIR)\keytrans.obj \
+	$(XMLSEC_NSS_INTDIR)\key_agrmnt.obj \
 	$(XMLSEC_NSS_INTDIR)\kw_des.obj \
-	$(XMLSEC_NSS_INTDIR)\kw_aes.obj \
+	$(XMLSEC_NSS_INTDIR)\kw_rfc_3394.obj \
 	$(XMLSEC_NSS_INTDIR)\pbkdf2.obj \
 	$(XMLSEC_NSS_INTDIR)\pkikeys.obj \
 	$(XMLSEC_NSS_INTDIR)\signatures.obj \
@@ -276,14 +286,18 @@ XMLSEC_NSS_OBJS = \
 	$(XMLSEC_NSS_INTDIR)\x509vfy.obj
 XMLSEC_NSS_OBJS_A = \
 	$(XMLSEC_NSS_INTDIR_A)\app.obj \
-	$(XMLSEC_NSS_INTDIR_A)\ciphers.obj \
+	$(XMLSEC_NSS_INTDIR_A)\ciphers_cbc.obj \
+	$(XMLSEC_NSS_INTDIR_A)\ciphers_aead.obj \
+	$(XMLSEC_NSS_INTDIR_A)\concatkdf.obj \
 	$(XMLSEC_NSS_INTDIR_A)\crypto.obj \
+	$(XMLSEC_NSS_INTDIR_A)\der_encoded_value.obj \
 	$(XMLSEC_NSS_INTDIR_A)\digests.obj \
 	$(XMLSEC_NSS_INTDIR_A)\hmac.obj \
 	$(XMLSEC_NSS_INTDIR_A)\keysstore.obj \
-	$(XMLSEC_NSS_INTDIR_A)\kt_rsa.obj \
+	$(XMLSEC_NSS_INTDIR_A)\keytrans.obj \
+	$(XMLSEC_NSS_INTDIR_A)\key_agrmnt.obj \
 	$(XMLSEC_NSS_INTDIR_A)\kw_des.obj \
-	$(XMLSEC_NSS_INTDIR_A)\kw_aes.obj \
+	$(XMLSEC_NSS_INTDIR_A)\kw_rfc_3394.obj \
 	$(XMLSEC_NSS_INTDIR_A)\pbkdf2.obj \
 	$(XMLSEC_NSS_INTDIR_A)\pkikeys.obj \
 	$(XMLSEC_NSS_INTDIR_A)\strings.obj \
@@ -300,7 +314,7 @@ XMLSEC_MSCRYPTO_OBJS = \
 	$(XMLSEC_MSCRYPTO_INTDIR)\hmac.obj \
 	$(XMLSEC_MSCRYPTO_INTDIR)\symkeys.obj \
 	$(XMLSEC_MSCRYPTO_INTDIR)\kt_rsa.obj \
-	$(XMLSEC_MSCRYPTO_INTDIR)\kw_aes.obj \
+	$(XMLSEC_MSCRYPTO_INTDIR)\kw_rfc_3394.obj \
 	$(XMLSEC_MSCRYPTO_INTDIR)\kw_des.obj \
 	$(XMLSEC_MSCRYPTO_INTDIR)\strings.obj \
 	$(XMLSEC_MSCRYPTO_INTDIR)\signatures.obj \
@@ -316,7 +330,7 @@ XMLSEC_MSCRYPTO_OBJS_A = \
 	$(XMLSEC_MSCRYPTO_INTDIR_A)\hmac.obj \
 	$(XMLSEC_MSCRYPTO_INTDIR_A)\symkeys.obj \
 	$(XMLSEC_MSCRYPTO_INTDIR_A)\kt_rsa.obj \
-	$(XMLSEC_MSCRYPTO_INTDIR_A)\kw_aes.obj \
+	$(XMLSEC_MSCRYPTO_INTDIR_A)\kw_rfc_3394.obj \
 	$(XMLSEC_MSCRYPTO_INTDIR_A)\kw_des.obj \
 	$(XMLSEC_MSCRYPTO_INTDIR_A)\strings.obj \
 	$(XMLSEC_MSCRYPTO_INTDIR_A)\signatures.obj \
@@ -328,6 +342,7 @@ XMLSEC_MSCRYPTO_OBJS_A = \
 XMLSEC_MSCNG_OBJS = \
 	$(XMLSEC_MSCNG_INTDIR)\app.obj\
 	$(XMLSEC_MSCNG_INTDIR)\certkeys.obj \
+	$(XMLSEC_MSCNG_INTDIR)\der_encoded_value.obj \
 	$(XMLSEC_MSCNG_INTDIR)\ciphers_cbc.obj \
 	$(XMLSEC_MSCNG_INTDIR)\ciphers_gcm.obj \
 	$(XMLSEC_MSCNG_INTDIR)\concatkdf.obj \
@@ -338,7 +353,7 @@ XMLSEC_MSCNG_OBJS = \
 	$(XMLSEC_MSCNG_INTDIR)\key_agrmnt.obj \
 	$(XMLSEC_MSCNG_INTDIR)\keysstore.obj \
 	$(XMLSEC_MSCNG_INTDIR)\kt_rsa.obj \
-	$(XMLSEC_MSCNG_INTDIR)\kw_aes.obj \
+	$(XMLSEC_MSCNG_INTDIR)\kw_rfc_3394.obj \
 	$(XMLSEC_MSCNG_INTDIR)\kw_des.obj \
 	$(XMLSEC_MSCNG_INTDIR)\pbkdf2.obj \
 	$(XMLSEC_MSCNG_INTDIR)\strings.obj\
@@ -348,6 +363,7 @@ XMLSEC_MSCNG_OBJS = \
 XMLSEC_MSCNG_OBJS_A = \
 	$(XMLSEC_MSCNG_INTDIR_A)\app.obj\
 	$(XMLSEC_MSCNG_INTDIR_A)\certkeys.obj \
+	$(XMLSEC_MSCNG_INTDIR_A)\der_encoded_value.obj \
 	$(XMLSEC_MSCNG_INTDIR_A)\ciphers_cbc.obj \
 	$(XMLSEC_MSCNG_INTDIR_A)\ciphers_gcm.obj \
 	$(XMLSEC_MSCNG_INTDIR_A)\concatkdf.obj \
@@ -358,7 +374,7 @@ XMLSEC_MSCNG_OBJS_A = \
 	$(XMLSEC_MSCNG_INTDIR_A)\key_agrmnt.obj \
 	$(XMLSEC_MSCNG_INTDIR_A)\keysstore.obj \
 	$(XMLSEC_MSCNG_INTDIR_A)\kt_rsa.obj \
-	$(XMLSEC_MSCNG_INTDIR_A)\kw_aes.obj \
+	$(XMLSEC_MSCNG_INTDIR_A)\kw_rfc_3394.obj \
 	$(XMLSEC_MSCNG_INTDIR_A)\kw_des.obj \
 	$(XMLSEC_MSCNG_INTDIR_A)\pbkdf2.obj \
 	$(XMLSEC_MSCNG_INTDIR_A)\strings.obj\

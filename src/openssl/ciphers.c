@@ -24,6 +24,7 @@
 #include <xmlsec/keys.h>
 #include <xmlsec/private.h>
 #include <xmlsec/transforms.h>
+#include <xmlsec/xmltree.h>
 
 #include <xmlsec/openssl/crypto.h>
 #include <xmlsec/openssl/evp.h>
@@ -31,6 +32,7 @@
 
 #include "../cast_helpers.h"
 #include "../keysdata_helpers.h"
+#include "../transform_helpers.h"
 
 #define XMLSEC_OPENSSL_EVP_CIPHER_PAD_SIZE    (2 * EVP_MAX_BLOCK_LENGTH)
 #define XMLSEC_OPENSSL_AES_GCM_NONCE_SIZE     12
@@ -115,7 +117,7 @@ xmlSecOpenSSLEvpBlockCipherCtxInit(xmlSecOpenSSLEvpBlockCipherCtxPtr ctx,
     xmlSecAssert2(ivSize <= sizeof(ctx->iv), -1);
     if(encrypt) {
         /* generate random iv */
-        ret = RAND_priv_bytes_ex(xmlSecOpenSSLGetLibCtx(), ctx->iv, ivSize, XMLSEEC_OPENSSL_RAND_BYTES_STRENGTH);
+        ret = RAND_priv_bytes_ex(xmlSecOpenSSLGetLibCtx(), ctx->iv, ivSize, XMLSEC_OPENSSL_RAND_BYTES_STRENGTH);
         if(ret != 1) {
             xmlSecOpenSSLError2("RAND_priv_bytes_ex", cipherName, "size=" XMLSEC_SIZE_FMT, ivSize);
             return(-1);
@@ -147,9 +149,9 @@ xmlSecOpenSSLEvpBlockCipherCtxInit(xmlSecOpenSSLEvpBlockCipherCtxPtr ctx,
     }
 
     /* set iv */
-    ret = EVP_CipherInit(ctx->cipherCtx, ctx->cipher, ctx->key, ctx->iv, encrypt);
+    ret = EVP_CipherInit_ex(ctx->cipherCtx, ctx->cipher, NULL, ctx->key, ctx->iv, encrypt);
     if(ret != 1) {
-        xmlSecOpenSSLError("EVP_CipherIn", cipherName);
+        xmlSecOpenSSLError("EVP_CipherInit_ex", cipherName);
         return(-1);
     }
 
@@ -258,9 +260,9 @@ xmlSecOpenSSLEvpBlockCipherCtxUpdateBlock(xmlSecOpenSSLEvpBlockCipherCtxPtr ctx,
             }
         }
 
-        ret = EVP_CipherFinal(ctx->cipherCtx, outBuf + outLen, &outLen2);
+        ret = EVP_CipherFinal_ex(ctx->cipherCtx, outBuf + outLen, &outLen2);
         if(ret != 1) {
-            xmlSecOpenSSLError("EVP_CipherFinal", cipherName);
+            xmlSecOpenSSLError("EVP_CipherFinal_ex", cipherName);
             return(-1);
         }
 
@@ -440,7 +442,7 @@ xmlSecOpenSSLEvpBlockCipherCBCCtxFinal(xmlSecOpenSSLEvpBlockCipherCtxPtr ctx,
         if(padLen > 1) {
             XMLSEC_OPENSSL_SAFE_CAST_UINT_TO_SIZE(padLen, size, return(-1), NULL);
             ret = RAND_priv_bytes_ex(xmlSecOpenSSLGetLibCtx(), ctx->pad + inLen, size - 1,
-                                XMLSEEC_OPENSSL_RAND_BYTES_STRENGTH);
+                                XMLSEC_OPENSSL_RAND_BYTES_STRENGTH);
             if (ret != 1) {
                 xmlSecOpenSSLError("RAND_priv_bytes_ex", cipherName);
                 return(-1);
@@ -654,6 +656,15 @@ xmlSecOpenSSLEvpBlockCipherCheckId(xmlSecTransformPtr transform) {
     }
 #endif /* XMLSEC_NO_AES */
 
+#ifndef XMLSEC_NO_CAMELLIA
+    if(xmlSecTransformCheckId(transform, xmlSecOpenSSLTransformCamellia128CbcId) ||
+       xmlSecTransformCheckId(transform, xmlSecOpenSSLTransformCamellia192CbcId) ||
+       xmlSecTransformCheckId(transform, xmlSecOpenSSLTransformCamellia256CbcId)) {
+
+       return(1);
+    }
+#endif /* XMLSEC_NO_CAMELLIA */
+
     return(0);
 }
 
@@ -680,7 +691,7 @@ xmlSecOpenSSLEvpBlockCipherInitialize(xmlSecTransformPtr transform) {
 
 #ifndef XMLSEC_NO_DES
     if(transform->id == xmlSecOpenSSLTransformDes3CbcId) {
-        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_des_ede3_cbc(), XMLSEEC_OPENSSL_CIPHER_NAME_DES3_EDE);
+        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_des_ede3_cbc(), XMLSEC_OPENSSL_CIPHER_NAME_DES3_EDE);
         ctx->keyId      = xmlSecOpenSSLKeyDataDesId;
         ctx->cbcMode    = 1;
     } else
@@ -688,31 +699,47 @@ xmlSecOpenSSLEvpBlockCipherInitialize(xmlSecTransformPtr transform) {
 
 #ifndef XMLSEC_NO_AES
     if(transform->id == xmlSecOpenSSLTransformAes128CbcId) {
-        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_aes_128_cbc(), XMLSEEC_OPENSSL_CIPHER_NAME_AES128_CBC);
+        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_aes_128_cbc(), XMLSEC_OPENSSL_CIPHER_NAME_AES128_CBC);
         ctx->keyId      = xmlSecOpenSSLKeyDataAesId;
         ctx->cbcMode    = 1;
     } else if(transform->id == xmlSecOpenSSLTransformAes192CbcId) {
-        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_aes_192_cbc(), XMLSEEC_OPENSSL_CIPHER_NAME_AES192_CBC);
+        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_aes_192_cbc(), XMLSEC_OPENSSL_CIPHER_NAME_AES192_CBC);
         ctx->keyId      = xmlSecOpenSSLKeyDataAesId;
         ctx->cbcMode    = 1;
     } else if(transform->id == xmlSecOpenSSLTransformAes256CbcId) {
-        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_aes_256_cbc(), XMLSEEC_OPENSSL_CIPHER_NAME_AES256_CBC);
+        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_aes_256_cbc(), XMLSEC_OPENSSL_CIPHER_NAME_AES256_CBC);
         ctx->keyId      = xmlSecOpenSSLKeyDataAesId;
         ctx->cbcMode    = 1;
     } else if(transform->id == xmlSecOpenSSLTransformAes128GcmId) {
-        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_aes_128_gcm(), XMLSEEC_OPENSSL_CIPHER_NAME_AES128_GCM);
+        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_aes_128_gcm(), XMLSEC_OPENSSL_CIPHER_NAME_AES128_GCM);
         ctx->keyId      = xmlSecOpenSSLKeyDataAesId;
         ctx->cbcMode    = 0;
     } else if(transform->id == xmlSecOpenSSLTransformAes192GcmId) {
-        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_aes_192_gcm(), XMLSEEC_OPENSSL_CIPHER_NAME_AES192_GCM);
+        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_aes_192_gcm(), XMLSEC_OPENSSL_CIPHER_NAME_AES192_GCM);
         ctx->keyId      = xmlSecOpenSSLKeyDataAesId;
         ctx->cbcMode    = 0;
     } else if(transform->id == xmlSecOpenSSLTransformAes256GcmId) {
-        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_aes_256_gcm(), XMLSEEC_OPENSSL_CIPHER_NAME_AES256_GCM);
+        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_aes_256_gcm(), XMLSEC_OPENSSL_CIPHER_NAME_AES256_GCM);
         ctx->keyId      = xmlSecOpenSSLKeyDataAesId;
         ctx->cbcMode    = 0;
     } else
 #endif /* XMLSEC_NO_AES */
+
+#ifndef XMLSEC_NO_CAMELLIA
+    if(transform->id == xmlSecOpenSSLTransformCamellia128CbcId) {
+        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_camellia_128_cbc(), XMLSEC_OPENSSL_CIPHER_NAME_CAMELLIA128_CBC);
+        ctx->keyId      = xmlSecOpenSSLKeyDataCamelliaId;
+        ctx->cbcMode    = 1;
+    } else if(transform->id == xmlSecOpenSSLTransformCamellia192CbcId) {
+        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_camellia_192_cbc(), XMLSEC_OPENSSL_CIPHER_NAME_CAMELLIA192_CBC);
+        ctx->keyId      = xmlSecOpenSSLKeyDataCamelliaId;
+        ctx->cbcMode    = 1;
+    } else if(transform->id == xmlSecOpenSSLTransformCamellia256CbcId) {
+        XMLSEC_OPENSSL_SET_CIPHER(ctx, EVP_camellia_256_cbc(), XMLSEC_OPENSSL_CIPHER_NAME_CAMELLIA256_CBC);
+        ctx->keyId      = xmlSecOpenSSLKeyDataCamelliaId;
+        ctx->cbcMode    = 1;
+    } else
+#endif /* XMLSEC_NO_CAMELLIA */
 
     if(1) {
         xmlSecInvalidTransfromError(transform)
@@ -911,6 +938,35 @@ xmlSecOpenSSLEvpBlockCipherExecute(xmlSecTransformPtr transform, int last, xmlSe
     return(0);
 }
 
+/* Helper macros to define block cipher transform klasses */
+#define XMLSEC_OPENSSL_BLOCK_CIPHER_KLASS_EX(name, readNode)                                            \
+static xmlSecTransformKlass xmlSecOpenSSL ## name ## Klass = {                                          \
+    /* klass/object sizes */                                                                            \
+    sizeof(xmlSecTransformKlass),               /* xmlSecSize klassSize */                              \
+    xmlSecOpenSSLEvpBlockCipherSize,            /* xmlSecSize objSize */                                \
+    xmlSecName ## name,                         /* const xmlChar* name; */                              \
+    xmlSecHref ## name,                         /* const xmlChar* href; */                              \
+    xmlSecTransformUsageEncryptionMethod,       /* xmlSecAlgorithmUsage usage; */                       \
+    xmlSecOpenSSLEvpBlockCipherInitialize,      /* xmlSecTransformInitializeMethod initialize; */       \
+    xmlSecOpenSSLEvpBlockCipherFinalize,        /* xmlSecTransformFinalizeMethod finalize; */           \
+    readNode,                                   /* xmlSecTransformNodeReadMethod readNode; */           \
+    NULL,                                       /* xmlSecTransformNodeWriteMethod writeNode; */         \
+    xmlSecOpenSSLEvpBlockCipherSetKeyReq,       /* xmlSecTransformSetKeyReqMethod setKeyReq; */         \
+    xmlSecOpenSSLEvpBlockCipherSetKey,          /* xmlSecTransformSetKeyMethod setKey; */               \
+    NULL,                                       /* xmlSecTransformValidateMethod validate; */           \
+    xmlSecTransformDefaultGetDataType,          /* xmlSecTransformGetDataTypeMethod getDataType; */     \
+    xmlSecTransformDefaultPushBin,              /* xmlSecTransformPushBinMethod pushBin; */             \
+    xmlSecTransformDefaultPopBin,               /* xmlSecTransformPopBinMethod popBin; */               \
+    NULL,                                       /* xmlSecTransformPushXmlMethod pushXml; */             \
+    NULL,                                       /* xmlSecTransformPopXmlMethod popXml; */               \
+    xmlSecOpenSSLEvpBlockCipherExecute,         /* xmlSecTransformExecuteMethod execute; */             \
+    NULL,                                       /* void* reserved0; */                                  \
+    NULL,                                       /* void* reserved1; */                                  \
+};
+
+#define XMLSEC_OPENSSL_BLOCK_CIPHER_KLASS(name)                                                         \
+    XMLSEC_OPENSSL_BLOCK_CIPHER_KLASS_EX(name, NULL)
+
 
 #ifndef XMLSEC_NO_AES
 /*********************************************************************
@@ -918,32 +974,8 @@ xmlSecOpenSSLEvpBlockCipherExecute(xmlSecTransformPtr transform, int last, xmlSe
  * AES CBC cipher transforms
  *
  ********************************************************************/
-static xmlSecTransformKlass xmlSecOpenSSLAes128CbcKlass = {
-    /* klass/object sizes */
-    sizeof(xmlSecTransformKlass),               /* xmlSecSize klassSize */
-    xmlSecOpenSSLEvpBlockCipherSize,            /* xmlSecSize objSize */
-
-    xmlSecNameAes128Cbc,                        /* const xmlChar* name; */
-    xmlSecHrefAes128Cbc,                        /* const xmlChar* href; */
-    xmlSecTransformUsageEncryptionMethod,       /* xmlSecAlgorithmUsage usage; */
-
-    xmlSecOpenSSLEvpBlockCipherInitialize,      /* xmlSecTransformInitializeMethod initialize; */
-    xmlSecOpenSSLEvpBlockCipherFinalize,        /* xmlSecTransformFinalizeMethod finalize; */
-    NULL,                                       /* xmlSecTransformNodeReadMethod readNode; */
-    NULL,                                       /* xmlSecTransformNodeWriteMethod writeNode; */
-    xmlSecOpenSSLEvpBlockCipherSetKeyReq,       /* xmlSecTransformSetKeyMethod setKeyReq; */
-    xmlSecOpenSSLEvpBlockCipherSetKey,          /* xmlSecTransformSetKeyMethod setKey; */
-    NULL,                                       /* xmlSecTransformValidateMethod validate; */
-    xmlSecTransformDefaultGetDataType,          /* xmlSecTransformGetDataTypeMethod getDataType; */
-    xmlSecTransformDefaultPushBin,              /* xmlSecTransformPushBinMethod pushBin; */
-    xmlSecTransformDefaultPopBin,               /* xmlSecTransformPopBinMethod popBin; */
-    NULL,                                       /* xmlSecTransformPushXmlMethod pushXml; */
-    NULL,                                       /* xmlSecTransformPopXmlMethod popXml; */
-    xmlSecOpenSSLEvpBlockCipherExecute,         /* xmlSecTransformExecuteMethod execute; */
-
-    NULL,                                       /* void* reserved0; */
-    NULL,                                       /* void* reserved1; */
-};
+/* AES 128 CBC cipher transform: xmlSecOpenSSLAes128CbcKlass */
+XMLSEC_OPENSSL_BLOCK_CIPHER_KLASS(Aes128Cbc)
 
 /**
  * xmlSecOpenSSLTransformAes128CbcGetKlass:
@@ -957,32 +989,8 @@ xmlSecOpenSSLTransformAes128CbcGetKlass(void) {
     return(&xmlSecOpenSSLAes128CbcKlass);
 }
 
-static xmlSecTransformKlass xmlSecOpenSSLAes192CbcKlass = {
-    /* klass/object sizes */
-    sizeof(xmlSecTransformKlass),               /* xmlSecSize klassSize */
-    xmlSecOpenSSLEvpBlockCipherSize,            /* xmlSecSize objSize */
-
-    xmlSecNameAes192Cbc,                        /* const xmlChar* name; */
-    xmlSecHrefAes192Cbc,                        /* const xmlChar* href; */
-    xmlSecTransformUsageEncryptionMethod,       /* xmlSecAlgorithmUsage usage; */
-
-    xmlSecOpenSSLEvpBlockCipherInitialize,      /* xmlSecTransformInitializeMethod initialize; */
-    xmlSecOpenSSLEvpBlockCipherFinalize,        /* xmlSecTransformFinalizeMethod finalize; */
-    NULL,                                       /* xmlSecTransformNodeReadMethod readNode; */
-    NULL,                                       /* xmlSecTransformNodeWriteMethod writeNode; */
-    xmlSecOpenSSLEvpBlockCipherSetKeyReq,       /* xmlSecTransformSetKeyMethod setKeyReq; */
-    xmlSecOpenSSLEvpBlockCipherSetKey,          /* xmlSecTransformSetKeyMethod setKey; */
-    NULL,                                       /* xmlSecTransformValidateMethod validate; */
-    xmlSecTransformDefaultGetDataType,          /* xmlSecTransformGetDataTypeMethod getDataType; */
-    xmlSecTransformDefaultPushBin,              /* xmlSecTransformPushBinMethod pushBin; */
-    xmlSecTransformDefaultPopBin,               /* xmlSecTransformPopBinMethod popBin; */
-    NULL,                                       /* xmlSecTransformPushXmlMethod pushXml; */
-    NULL,                                       /* xmlSecTransformPopXmlMethod popXml; */
-    xmlSecOpenSSLEvpBlockCipherExecute,         /* xmlSecTransformExecuteMethod execute; */
-
-    NULL,                                       /* void* reserved0; */
-    NULL,                                       /* void* reserved1; */
-};
+/* AES 192 CBC cipher transform: xmlSecOpenSSLAes192CbcKlass */
+XMLSEC_OPENSSL_BLOCK_CIPHER_KLASS(Aes192Cbc)
 
 /**
  * xmlSecOpenSSLTransformAes192CbcGetKlass:
@@ -996,32 +1004,8 @@ xmlSecOpenSSLTransformAes192CbcGetKlass(void) {
     return(&xmlSecOpenSSLAes192CbcKlass);
 }
 
-static xmlSecTransformKlass xmlSecOpenSSLAes256CbcKlass = {
-    /* klass/object sizes */
-    sizeof(xmlSecTransformKlass),               /* xmlSecSize klassSize */
-    xmlSecOpenSSLEvpBlockCipherSize,            /* xmlSecSize objSize */
-
-    xmlSecNameAes256Cbc,                        /* const xmlChar* name; */
-    xmlSecHrefAes256Cbc,                        /* const xmlChar* href; */
-    xmlSecTransformUsageEncryptionMethod,       /* xmlSecAlgorithmUsage usage; */
-
-    xmlSecOpenSSLEvpBlockCipherInitialize,      /* xmlSecTransformInitializeMethod initialize; */
-    xmlSecOpenSSLEvpBlockCipherFinalize,        /* xmlSecTransformFinalizeMethod finalize; */
-    NULL,                                       /* xmlSecTransformNodeReadMethod readNode; */
-    NULL,                                       /* xmlSecTransformNodeWriteMethod writeNode; */
-    xmlSecOpenSSLEvpBlockCipherSetKeyReq,       /* xmlSecTransformSetKeyMethod setKeyReq; */
-    xmlSecOpenSSLEvpBlockCipherSetKey,          /* xmlSecTransformSetKeyMethod setKey; */
-    NULL,                                       /* xmlSecTransformValidateMethod validate; */
-    xmlSecTransformDefaultGetDataType,          /* xmlSecTransformGetDataTypeMethod getDataType; */
-    xmlSecTransformDefaultPushBin,              /* xmlSecTransformPushBinMethod pushBin; */
-    xmlSecTransformDefaultPopBin,               /* xmlSecTransformPopBinMethod popBin; */
-    NULL,                                       /* xmlSecTransformPushXmlMethod pushXml; */
-    NULL,                                       /* xmlSecTransformPopXmlMethod popXml; */
-    xmlSecOpenSSLEvpBlockCipherExecute,         /* xmlSecTransformExecuteMethod execute; */
-
-    NULL,                                       /* void* reserved0; */
-    NULL,                                       /* void* reserved1; */
-};
+/* AES 256 CBC cipher transform: xmlSecOpenSSLAes256CbcKlass */
+XMLSEC_OPENSSL_BLOCK_CIPHER_KLASS(Aes256Cbc)
 
 /**
  * xmlSecOpenSSLTransformAes256CbcGetKlass:
@@ -1035,32 +1019,8 @@ xmlSecOpenSSLTransformAes256CbcGetKlass(void) {
     return(&xmlSecOpenSSLAes256CbcKlass);
 }
 
-static xmlSecTransformKlass xmlSecOpenSSLAes128GcmKlass = {
-    /* klass/object sizes */
-    sizeof(xmlSecTransformKlass),               /* xmlSecSize klassSize */
-    xmlSecOpenSSLEvpBlockCipherSize,            /* xmlSecSize objSize */
-
-    xmlSecNameAes128Gcm,                        /* const xmlChar* name; */
-    xmlSecHrefAes128Gcm,                        /* const xmlChar* href; */
-    xmlSecTransformUsageEncryptionMethod,       /* xmlSecAlgorithmUsage usage; */
-
-    xmlSecOpenSSLEvpBlockCipherInitialize,      /* xmlSecTransformInitializeMethod initialize; */
-    xmlSecOpenSSLEvpBlockCipherFinalize,        /* xmlSecTransformFinalizeMethod finalize; */
-    NULL,                                       /* xmlSecTransformNodeReadMethod readNode; */
-    NULL,                                       /* xmlSecTransformNodeWriteMethod writeNode; */
-    xmlSecOpenSSLEvpBlockCipherSetKeyReq,       /* xmlSecTransformSetKeyMethod setKeyReq; */
-    xmlSecOpenSSLEvpBlockCipherSetKey,          /* xmlSecTransformSetKeyMethod setKey; */
-    NULL,                                       /* xmlSecTransformValidateMethod validate; */
-    xmlSecTransformDefaultGetDataType,          /* xmlSecTransformGetDataTypeMethod getDataType; */
-    xmlSecTransformDefaultPushBin,              /* xmlSecTransformPushBinMethod pushBin; */
-    xmlSecTransformDefaultPopBin,               /* xmlSecTransformPopBinMethod popBin; */
-    NULL,                                       /* xmlSecTransformPushXmlMethod pushXml; */
-    NULL,                                       /* xmlSecTransformPopXmlMethod popXml; */
-    xmlSecOpenSSLEvpBlockCipherExecute,         /* xmlSecTransformExecuteMethod execute; */
-
-    NULL,                                       /* void* reserved0; */
-    NULL,                                       /* void* reserved1; */
-};
+/* AES 128 GCM cipher transform: xmlSecOpenSSLAes128GcmKlass */
+XMLSEC_OPENSSL_BLOCK_CIPHER_KLASS(Aes128Gcm)
 
 /**
 * xmlSecOpenSSLTransformAes128GcmGetKlass:
@@ -1075,32 +1035,8 @@ xmlSecOpenSSLTransformAes128GcmGetKlass(void)
     return(&xmlSecOpenSSLAes128GcmKlass);
 }
 
-static xmlSecTransformKlass xmlSecOpenSSLAes192GcmKlass = {
-    /* klass/object sizes */
-    sizeof(xmlSecTransformKlass),               /* xmlSecSize klassSize */
-    xmlSecOpenSSLEvpBlockCipherSize,            /* xmlSecSize objSize */
-
-    xmlSecNameAes192Gcm,                        /* const xmlChar* name; */
-    xmlSecHrefAes192Gcm,                        /* const xmlChar* href; */
-    xmlSecTransformUsageEncryptionMethod,       /* xmlSecAlgorithmUsage usage; */
-
-    xmlSecOpenSSLEvpBlockCipherInitialize,      /* xmlSecTransformInitializeMethod initialize; */
-    xmlSecOpenSSLEvpBlockCipherFinalize,        /* xmlSecTransformFinalizeMethod finalize; */
-    NULL,                                       /* xmlSecTransformNodeReadMethod readNode; */
-    NULL,                                       /* xmlSecTransformNodeWriteMethod writeNode; */
-    xmlSecOpenSSLEvpBlockCipherSetKeyReq,       /* xmlSecTransformSetKeyMethod setKeyReq; */
-    xmlSecOpenSSLEvpBlockCipherSetKey,          /* xmlSecTransformSetKeyMethod setKey; */
-    NULL,                                       /* xmlSecTransformValidateMethod validate; */
-    xmlSecTransformDefaultGetDataType,          /* xmlSecTransformGetDataTypeMethod getDataType; */
-    xmlSecTransformDefaultPushBin,              /* xmlSecTransformPushBinMethod pushBin; */
-    xmlSecTransformDefaultPopBin,               /* xmlSecTransformPopBinMethod popBin; */
-    NULL,                                       /* xmlSecTransformPushXmlMethod pushXml; */
-    NULL,                                       /* xmlSecTransformPopXmlMethod popXml; */
-    xmlSecOpenSSLEvpBlockCipherExecute,         /* xmlSecTransformExecuteMethod execute; */
-
-    NULL,                                       /* void* reserved0; */
-    NULL,                                       /* void* reserved1; */
-};
+/* AES 192 GCM cipher transform: xmlSecOpenSSLAes192GcmKlass */
+XMLSEC_OPENSSL_BLOCK_CIPHER_KLASS(Aes192Gcm)
 
 /**
 * xmlSecOpenSSLTransformAes192GcmGetKlass:
@@ -1115,32 +1051,8 @@ xmlSecOpenSSLTransformAes192GcmGetKlass(void)
     return(&xmlSecOpenSSLAes192GcmKlass);
 }
 
-static xmlSecTransformKlass xmlSecOpenSSLAes256GcmKlass = {
-    /* klass/object sizes */
-    sizeof(xmlSecTransformKlass),               /* xmlSecSize klassSize */
-    xmlSecOpenSSLEvpBlockCipherSize,            /* xmlSecSize objSize */
-
-    xmlSecNameAes256Gcm,                        /* const xmlChar* name; */
-    xmlSecHrefAes256Gcm,                        /* const xmlChar* href; */
-    xmlSecTransformUsageEncryptionMethod,       /* xmlSecAlgorithmUsage usage; */
-
-    xmlSecOpenSSLEvpBlockCipherInitialize,      /* xmlSecTransformInitializeMethod initialize; */
-    xmlSecOpenSSLEvpBlockCipherFinalize,        /* xmlSecTransformFinalizeMethod finalize; */
-    NULL,                                       /* xmlSecTransformNodeReadMethod readNode; */
-    NULL,                                       /* xmlSecTransformNodeWriteMethod writeNode; */
-    xmlSecOpenSSLEvpBlockCipherSetKeyReq,       /* xmlSecTransformSetKeyMethod setKeyReq; */
-    xmlSecOpenSSLEvpBlockCipherSetKey,          /* xmlSecTransformSetKeyMethod setKey; */
-    NULL,                                       /* xmlSecTransformValidateMethod validate; */
-    xmlSecTransformDefaultGetDataType,          /* xmlSecTransformGetDataTypeMethod getDataType; */
-    xmlSecTransformDefaultPushBin,              /* xmlSecTransformPushBinMethod pushBin; */
-    xmlSecTransformDefaultPopBin,               /* xmlSecTransformPopBinMethod popBin; */
-    NULL,                                       /* xmlSecTransformPushXmlMethod pushXml; */
-    NULL,                                       /* xmlSecTransformPopXmlMethod popXml; */
-    xmlSecOpenSSLEvpBlockCipherExecute,         /* xmlSecTransformExecuteMethod execute; */
-
-    NULL,                                       /* void* reserved0; */
-    NULL,                                       /* void* reserved1; */
-};
+/* AES 256 GCM cipher transform: xmlSecOpenSSLAes256GcmKlass */
+XMLSEC_OPENSSL_BLOCK_CIPHER_KLASS(Aes256Gcm)
 
 /**
 * xmlSecOpenSSLTransformAes256GcmGetKlass:
@@ -1157,33 +1069,62 @@ xmlSecOpenSSLTransformAes256GcmGetKlass(void)
 
 #endif /* XMLSEC_NO_AES */
 
+#ifndef XMLSEC_NO_CAMELLIA
+/*********************************************************************
+ *
+ * Camellia CBC cipher transforms
+ *
+ ********************************************************************/
+/* Camellia 128 CBC cipher transform: xmlSecOpenSSLCamellia128CbcKlass */
+XMLSEC_OPENSSL_BLOCK_CIPHER_KLASS(Camellia128Cbc)
+
+/**
+ * xmlSecOpenSSLTransformCamellia128CbcGetKlass:
+ *
+ * Camellia 128 CBC encryption transform klass.
+ *
+ * Returns: pointer to Camellia 128 CBC encryption transform.
+ */
+xmlSecTransformId
+xmlSecOpenSSLTransformCamellia128CbcGetKlass(void) {
+    return(&xmlSecOpenSSLCamellia128CbcKlass);
+}
+
+/* Camellia 192 CBC cipher transform: xmlSecOpenSSLCamellia192CbcKlass */
+XMLSEC_OPENSSL_BLOCK_CIPHER_KLASS(Camellia192Cbc)
+
+/**
+ * xmlSecOpenSSLTransformCamellia192CbcGetKlass:
+ *
+ * Camellia 192 CBC encryption transform klass.
+ *
+ * Returns: pointer to Camellia 192 CBC encryption transform.
+ */
+xmlSecTransformId
+xmlSecOpenSSLTransformCamellia192CbcGetKlass(void) {
+    return(&xmlSecOpenSSLCamellia192CbcKlass);
+}
+
+/* Camellia 256 CBC cipher transform: xmlSecOpenSSLCamellia256CbcKlass */
+XMLSEC_OPENSSL_BLOCK_CIPHER_KLASS(Camellia256Cbc)
+
+/**
+ * xmlSecOpenSSLTransformCamellia256CbcGetKlass:
+ *
+ * Camellia 256 CBC encryption transform klass.
+ *
+ * Returns: pointer to Camellia 256 CBC encryption transform.
+ */
+xmlSecTransformId
+xmlSecOpenSSLTransformCamellia256CbcGetKlass(void) {
+    return(&xmlSecOpenSSLCamellia256CbcKlass);
+}
+
+#endif /* XMLSEC_NO_CAMELLIA */
+
 #ifndef XMLSEC_NO_DES
-static xmlSecTransformKlass xmlSecOpenSSLDes3CbcKlass = {
-    /* klass/object sizes */
-    sizeof(xmlSecTransformKlass),               /* xmlSecSize klassSize */
-    xmlSecOpenSSLEvpBlockCipherSize,            /* xmlSecSize objSize */
-
-    xmlSecNameDes3Cbc,                          /* const xmlChar* name; */
-    xmlSecHrefDes3Cbc,                          /* const xmlChar* href; */
-    xmlSecTransformUsageEncryptionMethod,       /* xmlSecAlgorithmUsage usage; */
-
-    xmlSecOpenSSLEvpBlockCipherInitialize,      /* xmlSecTransformInitializeMethod initialize; */
-    xmlSecOpenSSLEvpBlockCipherFinalize,        /* xmlSecTransformFinalizeMethod finalize; */
-    NULL,                                       /* xmlSecTransformNodeReadMethod readNode; */
-    NULL,                                       /* xmlSecTransformNodeWriteMethod writeNode; */
-    xmlSecOpenSSLEvpBlockCipherSetKeyReq,       /* xmlSecTransformSetKeyMethod setKeyReq; */
-    xmlSecOpenSSLEvpBlockCipherSetKey,          /* xmlSecTransformSetKeyMethod setKey; */
-    NULL,                                       /* xmlSecTransformValidateMethod validate; */
-    xmlSecTransformDefaultGetDataType,          /* xmlSecTransformGetDataTypeMethod getDataType; */
-    xmlSecTransformDefaultPushBin,              /* xmlSecTransformPushBinMethod pushBin; */
-    xmlSecTransformDefaultPopBin,               /* xmlSecTransformPopBinMethod popBin; */
-    NULL,                                       /* xmlSecTransformPushXmlMethod pushXml; */
-    NULL,                                       /* xmlSecTransformPopXmlMethod popXml; */
-    xmlSecOpenSSLEvpBlockCipherExecute,         /* xmlSecTransformExecuteMethod execute; */
-
-    NULL,                                       /* void* reserved0; */
-    NULL,                                       /* void* reserved1; */
-};
+/* Triple DES CBC cipher transform: xmlSecOpenSSLDes3CbcKlass */
+XMLSEC_OPENSSL_BLOCK_CIPHER_KLASS(Des3Cbc)
 
 /**
  * xmlSecOpenSSLTransformDes3CbcGetKlass:
@@ -1197,3 +1138,710 @@ xmlSecOpenSSLTransformDes3CbcGetKlass(void) {
     return(&xmlSecOpenSSLDes3CbcKlass);
 }
 #endif /* XMLSEC_NO_DES */
+
+#ifndef XMLSEC_NO_CHACHA20
+/********************************************************************
+ *
+ * ChaCha20 cipher support
+ *
+ *******************************************************************/
+
+/*
+ * ChaCha20 stream cipher context
+ */
+typedef struct _xmlSecOpenSSLChaCha20Ctx       xmlSecOpenSSLChaCha20Ctx,
+                                                *xmlSecOpenSSLChaCha20CtxPtr;
+struct _xmlSecOpenSSLChaCha20Ctx {
+    const EVP_CIPHER*               cipher;
+    EVP_CIPHER_CTX*                 cipherCtx;
+    xmlSecByte                      key[XMLSEC_CHACHA20_KEY_SIZE];
+    xmlSecTransformChaCha20Params   params;
+    int                             keyInitialized;
+    int                             ctxInitialized;
+    int                             paramsInitialized;
+};
+
+/*
+ * ChaCha20-Poly1305 AEAD context
+ */
+typedef struct _xmlSecOpenSSLChaCha20Poly1305Ctx  xmlSecOpenSSLChaCha20Poly1305Ctx,
+                                                   *xmlSecOpenSSLChaCha20Poly1305CtxPtr;
+struct _xmlSecOpenSSLChaCha20Poly1305Ctx {
+    const EVP_CIPHER*                       cipher;
+    EVP_CIPHER_CTX*                         cipherCtx;
+    xmlSecByte                              key[XMLSEC_CHACHA20_KEY_SIZE];
+    xmlSecTransformChaCha20Poly1305Params   params;
+    int                                     keyInitialized;
+    int                                     ctxInitialized;
+    int                                     paramsInitialized;
+};
+
+XMLSEC_TRANSFORM_DECLARE(OpenSSLChaCha20, xmlSecOpenSSLChaCha20Ctx)
+#define xmlSecOpenSSLChaCha20Size XMLSEC_TRANSFORM_SIZE(OpenSSLChaCha20)
+
+XMLSEC_TRANSFORM_DECLARE(OpenSSLChaCha20Poly1305, xmlSecOpenSSLChaCha20Poly1305Ctx)
+#define xmlSecOpenSSLChaCha20Poly1305Size XMLSEC_TRANSFORM_SIZE(OpenSSLChaCha20Poly1305)
+
+/* Forward declarations */
+static int  xmlSecOpenSSLChaCha20Initialize     (xmlSecTransformPtr transform);
+static void xmlSecOpenSSLChaCha20Finalize       (xmlSecTransformPtr transform);
+static int  xmlSecOpenSSLChaCha20NodeRead       (xmlSecTransformPtr transform,
+                                                  xmlNodePtr node,
+                                                  xmlSecTransformCtxPtr transformCtx);
+static int  xmlSecOpenSSLChaCha20SetKeyReq      (xmlSecTransformPtr transform,
+                                                  xmlSecKeyReqPtr keyReq);
+static int  xmlSecOpenSSLChaCha20SetKey         (xmlSecTransformPtr transform,
+                                                  xmlSecKeyPtr key);
+static int  xmlSecOpenSSLChaCha20Execute        (xmlSecTransformPtr transform,
+                                                  int last,
+                                                  xmlSecTransformCtxPtr transformCtx);
+
+static int  xmlSecOpenSSLChaCha20Poly1305Initialize   (xmlSecTransformPtr transform);
+static void xmlSecOpenSSLChaCha20Poly1305Finalize     (xmlSecTransformPtr transform);
+static int  xmlSecOpenSSLChaCha20Poly1305NodeRead     (xmlSecTransformPtr transform,
+                                                        xmlNodePtr node,
+                                                        xmlSecTransformCtxPtr transformCtx);
+static int  xmlSecOpenSSLChaCha20Poly1305SetKeyReq    (xmlSecTransformPtr transform,
+                                                        xmlSecKeyReqPtr keyReq);
+static int  xmlSecOpenSSLChaCha20Poly1305SetKey       (xmlSecTransformPtr transform,
+                                                        xmlSecKeyPtr key);
+static int  xmlSecOpenSSLChaCha20Poly1305Execute      (xmlSecTransformPtr transform,
+                                                        int last,
+                                                        xmlSecTransformCtxPtr transformCtx);
+
+/******************************************************************************
+ *
+ * ChaCha20 stream cipher transform
+ *
+ *****************************************************************************/
+static int
+xmlSecOpenSSLChaCha20Initialize(xmlSecTransformPtr transform) {
+    xmlSecOpenSSLChaCha20CtxPtr ctx;
+    int ret;
+
+    xmlSecAssert2(xmlSecTransformCheckId(transform, xmlSecOpenSSLTransformChaCha20Id), -1);
+    xmlSecAssert2(xmlSecTransformCheckSize(transform, xmlSecOpenSSLChaCha20Size), -1);
+
+    ctx = xmlSecOpenSSLChaCha20GetCtx(transform);
+    xmlSecAssert2(ctx != NULL, -1);
+
+    memset(ctx, 0, sizeof(xmlSecOpenSSLChaCha20Ctx));
+
+    ret = xmlSecTransformChaCha20ParamsInitialize(&(ctx->params));
+    if(ret < 0) {
+        xmlSecOpenSSLError("xmlSecTransformChaCha20ParamsInitialize", xmlSecTransformGetName(transform));
+        return(-1);
+    }
+    ctx->paramsInitialized = 1;
+
+    ctx->cipher = EVP_chacha20();
+    if(ctx->cipher == NULL) {
+        xmlSecOpenSSLError("EVP_chacha20", xmlSecTransformGetName(transform));
+        return(-1);
+    }
+
+    ctx->cipherCtx = EVP_CIPHER_CTX_new();
+    if(ctx->cipherCtx == NULL) {
+        xmlSecOpenSSLError("EVP_CIPHER_CTX_new", xmlSecTransformGetName(transform));
+        return(-1);
+    }
+
+    return(0);
+}
+
+static void
+xmlSecOpenSSLChaCha20Finalize(xmlSecTransformPtr transform) {
+    xmlSecOpenSSLChaCha20CtxPtr ctx;
+
+    xmlSecAssert(xmlSecTransformCheckId(transform, xmlSecOpenSSLTransformChaCha20Id));
+    xmlSecAssert(xmlSecTransformCheckSize(transform, xmlSecOpenSSLChaCha20Size));
+
+    ctx = xmlSecOpenSSLChaCha20GetCtx(transform);
+    xmlSecAssert(ctx != NULL);
+
+    if(ctx->cipherCtx != NULL) {
+        EVP_CIPHER_CTX_free(ctx->cipherCtx);
+    }
+    xmlSecTransformChaCha20ParamsFinalize(&(ctx->params));
+    memset(ctx, 0, sizeof(xmlSecOpenSSLChaCha20Ctx));
+}
+
+static int
+xmlSecOpenSSLChaCha20NodeRead(xmlSecTransformPtr transform, xmlNodePtr node,
+                               xmlSecTransformCtxPtr transformCtx) {
+    xmlSecOpenSSLChaCha20CtxPtr ctx;
+    int ret;
+
+    xmlSecAssert2(xmlSecTransformCheckId(transform, xmlSecOpenSSLTransformChaCha20Id), -1);
+    xmlSecAssert2(xmlSecTransformCheckSize(transform, xmlSecOpenSSLChaCha20Size), -1);
+    xmlSecAssert2(node != NULL, -1);
+    UNREFERENCED_PARAMETER(transformCtx);
+
+    ctx = xmlSecOpenSSLChaCha20GetCtx(transform);
+    xmlSecAssert2(ctx != NULL, -1);
+    xmlSecAssert2(ctx->paramsInitialized != 0, -1);
+
+    ret = xmlSecTransformChaCha20ParamsRead(&(ctx->params), node);
+    if(ret < 0) {
+        xmlSecInternalError("xmlSecTransformChaCha20ParamsRead",
+                            xmlSecTransformGetName(transform));
+        return(-1);
+    }
+
+    return(0);
+}
+
+static int
+xmlSecOpenSSLChaCha20SetKeyReq(xmlSecTransformPtr transform, xmlSecKeyReqPtr keyReq) {
+    xmlSecAssert2(xmlSecTransformCheckId(transform, xmlSecOpenSSLTransformChaCha20Id), -1);
+    xmlSecAssert2(keyReq != NULL, -1);
+
+    keyReq->keyId = xmlSecOpenSSLKeyDataChaCha20Id;
+    keyReq->keyType = xmlSecKeyDataTypeSymmetric;
+    if(transform->operation == xmlSecTransformOperationEncrypt) {
+        keyReq->keyUsage = xmlSecKeyUsageEncrypt;
+    } else {
+        keyReq->keyUsage = xmlSecKeyUsageDecrypt;
+    }
+    keyReq->keyBitsSize = 256; /* ChaCha20 requires 256-bit key */
+    return(0);
+}
+
+static int
+xmlSecOpenSSLChaCha20SetKey(xmlSecTransformPtr transform, xmlSecKeyPtr key) {
+    xmlSecOpenSSLChaCha20CtxPtr ctx;
+    xmlSecBufferPtr buffer;
+
+    xmlSecAssert2(xmlSecTransformCheckId(transform, xmlSecOpenSSLTransformChaCha20Id), -1);
+    xmlSecAssert2(key != NULL, -1);
+
+    ctx = xmlSecOpenSSLChaCha20GetCtx(transform);
+    xmlSecAssert2(ctx != NULL, -1);
+    xmlSecAssert2(ctx->keyInitialized == 0, -1);
+
+    buffer = xmlSecKeyDataBinaryValueGetBuffer(xmlSecKeyGetValue(key));
+    xmlSecAssert2(buffer != NULL, -1);
+
+    if(xmlSecBufferGetSize(buffer) < XMLSEC_CHACHA20_KEY_SIZE) {
+        xmlSecInvalidKeyDataSizeError(xmlSecBufferGetSize(buffer),
+                                      (xmlSecSize)XMLSEC_CHACHA20_KEY_SIZE,
+                                      xmlSecTransformGetName(transform));
+        return(-1);
+    }
+
+    xmlSecAssert2(xmlSecBufferGetData(buffer) != NULL, -1);
+    memcpy(ctx->key, xmlSecBufferGetData(buffer), XMLSEC_CHACHA20_KEY_SIZE);
+    ctx->keyInitialized = 1;
+
+    return(0);
+}
+
+static int
+xmlSecOpenSSLChaCha20Execute(xmlSecTransformPtr transform, int last,
+                              xmlSecTransformCtxPtr transformCtx) {
+    xmlSecOpenSSLChaCha20CtxPtr ctx;
+    xmlSecBufferPtr in, out;
+    xmlSecByte* inData;
+    xmlSecByte* outData;
+    xmlSecSize inSize, outSize;
+    int ret;
+    int outLen;
+    int inLen;
+    xmlSecByte iv[XMLSEC_CHACHA20_COUNTER_SIZE + XMLSEC_CHACHA20_NONCE_SIZE]; /* 16 bytes: 4 byte counter + 12 byte nonce */
+
+    xmlSecAssert2(xmlSecTransformCheckId(transform, xmlSecOpenSSLTransformChaCha20Id), -1);
+    xmlSecAssert2(transformCtx != NULL, -1);
+
+    ctx = xmlSecOpenSSLChaCha20GetCtx(transform);
+    xmlSecAssert2(ctx != NULL, -1);
+
+    in = &(transform->inBuf);
+    out = &(transform->outBuf);
+
+    if(transform->status == xmlSecTransformStatusNone) {
+        transform->status = xmlSecTransformStatusWorking;
+    }
+
+    if(transform->status == xmlSecTransformStatusWorking) {
+        if(ctx->ctxInitialized == 0) {
+            xmlSecAssert2(ctx->keyInitialized != 0, -1);
+            xmlSecAssert2(ctx->paramsInitialized != 0, -1);
+            xmlSecAssert2(xmlSecBufferGetSize(&(ctx->params.nonce)) == XMLSEC_CHACHA20_NONCE_SIZE, -1);
+            xmlSecAssert2(xmlSecBufferGetSize(&(ctx->params.counter)) == XMLSEC_CHACHA20_COUNTER_SIZE, -1);
+
+            /* Construct IV: counter (little-endian) + nonce */
+            memcpy(iv, xmlSecBufferGetData(&(ctx->params.counter)), XMLSEC_CHACHA20_COUNTER_SIZE);
+            memcpy(iv + XMLSEC_CHACHA20_COUNTER_SIZE, xmlSecBufferGetData(&(ctx->params.nonce)), XMLSEC_CHACHA20_NONCE_SIZE);
+
+            /* Initialize cipher */
+            ret = EVP_CipherInit_ex(ctx->cipherCtx, ctx->cipher, NULL, ctx->key, iv,
+                                    (transform->operation == xmlSecTransformOperationEncrypt) ? 1 : 0);
+            if(ret != 1) {
+                xmlSecOpenSSLError("EVP_CipherInit_ex", xmlSecTransformGetName(transform));
+                return(-1);
+            }
+
+            ctx->ctxInitialized = 1;
+        }
+
+        inSize = xmlSecBufferGetSize(in);
+        if(inSize > 0) {
+            /* Allocate output buffer */
+            ret = xmlSecBufferSetMaxSize(out, xmlSecBufferGetSize(out) + inSize + EVP_MAX_BLOCK_LENGTH);
+            if(ret < 0) {
+                xmlSecInternalError("xmlSecBufferSetMaxSize", xmlSecTransformGetName(transform));
+                return(-1);
+            }
+
+            inData = xmlSecBufferGetData(in);
+            outData = xmlSecBufferGetData(out) + xmlSecBufferGetSize(out);
+
+            /* Update cipher */
+            XMLSEC_SAFE_CAST_SIZE_TO_INT(inSize, inLen, return(-1), xmlSecTransformGetName(transform));
+            ret = EVP_CipherUpdate(ctx->cipherCtx, outData, &outLen, inData, inLen);
+            if(ret != 1) {
+                xmlSecOpenSSLError("EVP_CipherUpdate", xmlSecTransformGetName(transform));
+                return(-1);
+            }
+
+            XMLSEC_SAFE_CAST_INT_TO_SIZE(outLen, outSize, return(-1), xmlSecTransformGetName(transform));
+            ret = xmlSecBufferSetSize(out, xmlSecBufferGetSize(out) + outSize);
+            if(ret < 0) {
+                xmlSecInternalError("xmlSecBufferSetSize", xmlSecTransformGetName(transform));
+                return(-1);
+            }
+
+            ret = xmlSecBufferRemoveHead(in, inSize);
+            if(ret < 0) {
+                xmlSecInternalError("xmlSecBufferRemoveHead", xmlSecTransformGetName(transform));
+                return(-1);
+            }
+        }
+
+        if(last != 0) {
+            /* Finalize */
+            ret = xmlSecBufferSetMaxSize(out, xmlSecBufferGetSize(out) + EVP_MAX_BLOCK_LENGTH);
+            if(ret < 0) {
+                xmlSecInternalError("xmlSecBufferSetMaxSize", xmlSecTransformGetName(transform));
+                return(-1);
+            }
+
+            outData = xmlSecBufferGetData(out) + xmlSecBufferGetSize(out);
+            ret = EVP_CipherFinal_ex(ctx->cipherCtx, outData, &outLen);
+            if(ret != 1) {
+                xmlSecOpenSSLError("EVP_CipherFinal_ex", xmlSecTransformGetName(transform));
+                return(-1);
+            }
+
+            XMLSEC_SAFE_CAST_INT_TO_SIZE(outLen, outSize, return(-1), xmlSecTransformGetName(transform));
+            ret = xmlSecBufferSetSize(out, xmlSecBufferGetSize(out) + outSize);
+            if(ret < 0) {
+                xmlSecInternalError("xmlSecBufferSetSize", xmlSecTransformGetName(transform));
+                return(-1);
+            }
+
+            transform->status = xmlSecTransformStatusFinished;
+        }
+    } else if(transform->status == xmlSecTransformStatusFinished) {
+        /* Nothing to do */
+    } else {
+        xmlSecInvalidTransfromStatusError(transform);
+        return(-1);
+    }
+
+    return(0);
+}
+
+static xmlSecTransformKlass xmlSecOpenSSLChaCha20Klass = {
+    /* klass/object sizes */
+    sizeof(xmlSecTransformKlass),               /* xmlSecSize klassSize */
+    xmlSecOpenSSLChaCha20Size,                  /* xmlSecSize objSize */
+
+    xmlSecNameChaCha20,                         /* const xmlChar* name; */
+    xmlSecHrefChaCha20,                         /* const xmlChar* href; */
+    xmlSecTransformUsageEncryptionMethod,       /* xmlSecAlgorithmUsage usage; */
+
+    xmlSecOpenSSLChaCha20Initialize,            /* xmlSecTransformInitializeMethod initialize; */
+    xmlSecOpenSSLChaCha20Finalize,              /* xmlSecTransformFinalizeMethod finalize; */
+    xmlSecOpenSSLChaCha20NodeRead,              /* xmlSecTransformNodeReadMethod readNode; */
+    NULL,                                       /* xmlSecTransformNodeWriteMethod writeNode; */
+
+    xmlSecOpenSSLChaCha20SetKeyReq,             /* xmlSecTransformSetKeyReqMethod setKeyReq; */
+    xmlSecOpenSSLChaCha20SetKey,                /* xmlSecTransformSetKeyMethod setKey; */
+    NULL,                                       /* xmlSecTransformValidateMethod validate; */
+    xmlSecTransformDefaultGetDataType,          /* xmlSecTransformGetDataTypeMethod getDataType; */
+    xmlSecTransformDefaultPushBin,              /* xmlSecTransformPushBinMethod pushBin; */
+    xmlSecTransformDefaultPopBin,               /* xmlSecTransformPopBinMethod popBin; */
+    NULL,                                       /* xmlSecTransformPushXmlMethod pushXml; */
+    NULL,                                       /* xmlSecTransformPopXmlMethod popXml; */
+
+    xmlSecOpenSSLChaCha20Execute,               /* xmlSecTransformExecuteMethod execute; */
+
+    NULL /* void* reserved0; */,
+    NULL,                                       /* void* reserved1; */
+};
+
+/**
+ * xmlSecOpenSSLTransformChaCha20GetKlass:
+ *
+ * ChaCha20 stream cipher transform.
+ *
+ * Returns: pointer to ChaCha20 transform.
+ */
+xmlSecTransformId
+xmlSecOpenSSLTransformChaCha20GetKlass(void) {
+    return(&xmlSecOpenSSLChaCha20Klass);
+}
+
+/******************************************************************************
+ *
+ * ChaCha20-Poly1305 AEAD transform
+ *
+ *****************************************************************************/
+static int
+xmlSecOpenSSLChaCha20Poly1305Initialize(xmlSecTransformPtr transform) {
+    xmlSecOpenSSLChaCha20Poly1305CtxPtr ctx;
+    int ret;
+
+    xmlSecAssert2(xmlSecTransformCheckId(transform, xmlSecOpenSSLTransformChaCha20Poly1305Id), -1);
+    xmlSecAssert2(xmlSecTransformCheckSize(transform, xmlSecOpenSSLChaCha20Poly1305Size), -1);
+
+    ctx = xmlSecOpenSSLChaCha20Poly1305GetCtx(transform);
+    xmlSecAssert2(ctx != NULL, -1);
+
+    memset(ctx, 0, sizeof(xmlSecOpenSSLChaCha20Poly1305Ctx));
+
+    ret = xmlSecTransformChaCha20Poly1305ParamsInitialize(&(ctx->params));
+    if(ret < 0) {
+        xmlSecInternalError("xmlSecTransformChaCha20Poly1305ParamsInitialize", xmlSecTransformGetName(transform));
+        return(-1);
+    }
+    ctx->paramsInitialized = 1;
+
+    ctx->cipher = EVP_chacha20_poly1305();
+    if(ctx->cipher == NULL) {
+        xmlSecOpenSSLError("EVP_chacha20_poly1305", xmlSecTransformGetName(transform));
+        xmlSecTransformChaCha20Poly1305ParamsFinalize(&(ctx->params));
+        return(-1);
+    }
+
+    ctx->cipherCtx = EVP_CIPHER_CTX_new();
+    if(ctx->cipherCtx == NULL) {
+        xmlSecOpenSSLError("EVP_CIPHER_CTX_new", xmlSecTransformGetName(transform));
+        xmlSecTransformChaCha20Poly1305ParamsFinalize(&(ctx->params));
+        return(-1);
+    }
+
+    return(0);
+}
+
+static void
+xmlSecOpenSSLChaCha20Poly1305Finalize(xmlSecTransformPtr transform) {
+    xmlSecOpenSSLChaCha20Poly1305CtxPtr ctx;
+
+    xmlSecAssert(xmlSecTransformCheckId(transform, xmlSecOpenSSLTransformChaCha20Poly1305Id));
+    xmlSecAssert(xmlSecTransformCheckSize(transform, xmlSecOpenSSLChaCha20Poly1305Size));
+
+    ctx = xmlSecOpenSSLChaCha20Poly1305GetCtx(transform);
+    xmlSecAssert(ctx != NULL);
+
+    if(ctx->cipherCtx != NULL) {
+        EVP_CIPHER_CTX_free(ctx->cipherCtx);
+    }
+    xmlSecTransformChaCha20Poly1305ParamsFinalize(&(ctx->params));
+    memset(ctx, 0, sizeof(xmlSecOpenSSLChaCha20Poly1305Ctx));
+}
+
+static int
+xmlSecOpenSSLChaCha20Poly1305NodeRead(xmlSecTransformPtr transform, xmlNodePtr node,
+                                       xmlSecTransformCtxPtr transformCtx) {
+    xmlSecOpenSSLChaCha20Poly1305CtxPtr ctx;
+    int ret;
+
+    xmlSecAssert2(xmlSecTransformCheckId(transform, xmlSecOpenSSLTransformChaCha20Poly1305Id), -1);
+    xmlSecAssert2(xmlSecTransformCheckSize(transform, xmlSecOpenSSLChaCha20Poly1305Size), -1);
+    xmlSecAssert2(node != NULL, -1);
+    UNREFERENCED_PARAMETER(transformCtx);
+
+    ctx = xmlSecOpenSSLChaCha20Poly1305GetCtx(transform);
+    xmlSecAssert2(ctx != NULL, -1);
+    xmlSecAssert2(ctx->paramsInitialized != 0, -1);
+
+    ret = xmlSecTransformChaCha20Poly1305ParamsRead(&(ctx->params), node);
+    if(ret < 0) {
+        xmlSecInternalError("xmlSecTransformChaCha20Poly1305ParamsRead",
+                            xmlSecTransformGetName(transform));
+        return(-1);
+    }
+
+    return(0);
+}
+
+static int
+xmlSecOpenSSLChaCha20Poly1305SetKeyReq(xmlSecTransformPtr transform, xmlSecKeyReqPtr keyReq) {
+    xmlSecAssert2(xmlSecTransformCheckId(transform, xmlSecOpenSSLTransformChaCha20Poly1305Id), -1);
+    xmlSecAssert2(keyReq != NULL, -1);
+
+    keyReq->keyId = xmlSecOpenSSLKeyDataChaCha20Id;
+    keyReq->keyType = xmlSecKeyDataTypeSymmetric;
+    if(transform->operation == xmlSecTransformOperationEncrypt) {
+        keyReq->keyUsage = xmlSecKeyUsageEncrypt;
+    } else {
+        keyReq->keyUsage = xmlSecKeyUsageDecrypt;
+    }
+    keyReq->keyBitsSize = 256; /* ChaCha20-Poly1305 requires 256-bit key */
+    return(0);
+}
+
+static int
+xmlSecOpenSSLChaCha20Poly1305SetKey(xmlSecTransformPtr transform, xmlSecKeyPtr key) {
+    xmlSecOpenSSLChaCha20Poly1305CtxPtr ctx;
+    xmlSecBufferPtr buffer;
+
+    xmlSecAssert2(xmlSecTransformCheckId(transform, xmlSecOpenSSLTransformChaCha20Poly1305Id), -1);
+    xmlSecAssert2(key != NULL, -1);
+
+    ctx = xmlSecOpenSSLChaCha20Poly1305GetCtx(transform);
+    xmlSecAssert2(ctx != NULL, -1);
+    xmlSecAssert2(ctx->keyInitialized == 0, -1);
+
+    buffer = xmlSecKeyDataBinaryValueGetBuffer(xmlSecKeyGetValue(key));
+    xmlSecAssert2(buffer != NULL, -1);
+
+    if(xmlSecBufferGetSize(buffer) < XMLSEC_CHACHA20_KEY_SIZE) {
+        xmlSecInvalidKeyDataSizeError(xmlSecBufferGetSize(buffer),
+                                      (xmlSecSize)XMLSEC_CHACHA20_KEY_SIZE,
+                                      xmlSecTransformGetName(transform));
+        return(-1);
+    }
+
+    xmlSecAssert2(xmlSecBufferGetData(buffer) != NULL, -1);
+    memcpy(ctx->key, xmlSecBufferGetData(buffer), XMLSEC_CHACHA20_KEY_SIZE);
+    ctx->keyInitialized = 1;
+
+    return(0);
+}
+
+static int
+xmlSecOpenSSLChaCha20Poly1305Execute(xmlSecTransformPtr transform, int last,
+                                      xmlSecTransformCtxPtr transformCtx) {
+    xmlSecOpenSSLChaCha20Poly1305CtxPtr ctx;
+    xmlSecBufferPtr in, out;
+    xmlSecByte* inData;
+    xmlSecByte* outData;
+    xmlSecSize inSize, outSize;
+    xmlSecSize inUpdateSize;
+    xmlSecByte tag[XMLSEC_CHACHA20_POLY1305_TAG_SIZE];
+    int ret;
+    int outLen;
+    int inLen;
+    int aadLen;
+    int encrypt;
+
+    xmlSecAssert2(xmlSecTransformCheckId(transform, xmlSecOpenSSLTransformChaCha20Poly1305Id), -1);
+    xmlSecAssert2(transformCtx != NULL, -1);
+
+    ctx = xmlSecOpenSSLChaCha20Poly1305GetCtx(transform);
+    xmlSecAssert2(ctx != NULL, -1);
+
+    in = &(transform->inBuf);
+    out = &(transform->outBuf);
+    encrypt = (transform->operation == xmlSecTransformOperationEncrypt) ? 1 : 0;
+
+    if(transform->status == xmlSecTransformStatusNone) {
+        transform->status = xmlSecTransformStatusWorking;
+    }
+
+    if(transform->status == xmlSecTransformStatusWorking) {
+        if(ctx->ctxInitialized == 0) {
+            xmlSecAssert2(ctx->keyInitialized != 0, -1);
+            xmlSecAssert2(ctx->paramsInitialized != 0, -1);
+            xmlSecAssert2(xmlSecBufferGetSize(&(ctx->params.nonce)) == XMLSEC_CHACHA20_NONCE_SIZE, -1);
+
+            /* Initialize cipher */
+            ret = EVP_CipherInit_ex(ctx->cipherCtx, ctx->cipher, NULL, ctx->key, xmlSecBufferGetData(&(ctx->params.nonce)), encrypt);
+            if(ret != 1) {
+                xmlSecOpenSSLError("EVP_CipherInit_ex", xmlSecTransformGetName(transform));
+                return(-1);
+            }
+
+            /* Set AAD if present */
+            if(xmlSecBufferGetSize(&(ctx->params.aad)) > 0) {
+                xmlSecSize aadDataSize = xmlSecBufferGetSize(&(ctx->params.aad));
+
+                XMLSEC_SAFE_CAST_SIZE_TO_INT(aadDataSize, aadLen, return(-1), xmlSecTransformGetName(transform));
+                ret = EVP_CipherUpdate(ctx->cipherCtx, NULL, &outLen,
+                                      xmlSecBufferGetData(&(ctx->params.aad)),
+                                      aadLen);
+                if(ret != 1) {
+                    xmlSecOpenSSLError("EVP_CipherUpdate(aad)", xmlSecTransformGetName(transform));
+                    return(-1);
+                }
+            }
+
+            ctx->ctxInitialized = 1;
+        }
+
+        inSize = xmlSecBufferGetSize(in);
+
+        /* Keep trailing tag bytes in input until the final call. */
+        inUpdateSize = inSize;
+        if(!encrypt) {
+            if(last != 0) {
+                if(inUpdateSize < XMLSEC_CHACHA20_POLY1305_TAG_SIZE) {
+                    xmlSecInvalidSizeLessThanError("input", inUpdateSize,
+                        (xmlSecSize)XMLSEC_CHACHA20_POLY1305_TAG_SIZE,
+                        xmlSecTransformGetName(transform));
+                    return(-1);
+                }
+                inUpdateSize -= XMLSEC_CHACHA20_POLY1305_TAG_SIZE;
+            } else if(inUpdateSize <= XMLSEC_CHACHA20_POLY1305_TAG_SIZE) {
+                inUpdateSize = 0;
+            } else {
+                inUpdateSize -= XMLSEC_CHACHA20_POLY1305_TAG_SIZE;
+            }
+        }
+
+        if(inUpdateSize > 0) {
+            /* Allocate output buffer */
+            ret = xmlSecBufferSetMaxSize(out, xmlSecBufferGetSize(out) + inUpdateSize + EVP_MAX_BLOCK_LENGTH);
+            if(ret < 0) {
+                xmlSecInternalError("xmlSecBufferSetMaxSize", xmlSecTransformGetName(transform));
+                return(-1);
+            }
+
+            inData = xmlSecBufferGetData(in);
+            outData = xmlSecBufferGetData(out) + xmlSecBufferGetSize(out);
+
+            /* Update cipher */
+            XMLSEC_SAFE_CAST_SIZE_TO_INT(inUpdateSize, inLen, return(-1), xmlSecTransformGetName(transform));
+            ret = EVP_CipherUpdate(ctx->cipherCtx, outData, &outLen, inData, inLen);
+            if(ret != 1) {
+                xmlSecOpenSSLError("EVP_CipherUpdate", xmlSecTransformGetName(transform));
+                return(-1);
+            }
+
+            XMLSEC_SAFE_CAST_INT_TO_SIZE(outLen, outSize, return(-1), xmlSecTransformGetName(transform));
+            ret = xmlSecBufferSetSize(out, xmlSecBufferGetSize(out) + outSize);
+            if(ret < 0) {
+                xmlSecInternalError("xmlSecBufferSetSize", xmlSecTransformGetName(transform));
+                return(-1);
+            }
+
+            ret = xmlSecBufferRemoveHead(in, inUpdateSize);
+            if(ret < 0) {
+                xmlSecInternalError("xmlSecBufferRemoveHead", xmlSecTransformGetName(transform));
+                return(-1);
+            }
+        }
+
+        if(last != 0) {
+            if(!encrypt) {
+                /* Set tag for decryption */
+                xmlSecAssert2(xmlSecBufferGetSize(in) == XMLSEC_CHACHA20_POLY1305_TAG_SIZE, -1);
+                memcpy(tag, xmlSecBufferGetData(in), XMLSEC_CHACHA20_POLY1305_TAG_SIZE);
+                ret = EVP_CIPHER_CTX_ctrl(ctx->cipherCtx, EVP_CTRL_AEAD_SET_TAG,
+                                         XMLSEC_CHACHA20_POLY1305_TAG_SIZE, tag);
+                if(ret != 1) {
+                    xmlSecOpenSSLError("EVP_CIPHER_CTX_ctrl(set_tag)", xmlSecTransformGetName(transform));
+                    return(-1);
+                }
+            }
+
+            /* Finalize */
+            ret = xmlSecBufferSetMaxSize(out, xmlSecBufferGetSize(out) + EVP_MAX_BLOCK_LENGTH);
+            if(ret < 0) {
+                xmlSecInternalError("xmlSecBufferSetMaxSize", xmlSecTransformGetName(transform));
+                return(-1);
+            }
+
+            outData = xmlSecBufferGetData(out) + xmlSecBufferGetSize(out);
+            ret = EVP_CipherFinal_ex(ctx->cipherCtx, outData, &outLen);
+            if(ret != 1) {
+                xmlSecOpenSSLError("EVP_CipherFinal_ex", xmlSecTransformGetName(transform));
+                return(-1);
+            }
+
+            XMLSEC_SAFE_CAST_INT_TO_SIZE(outLen, outSize, return(-1), xmlSecTransformGetName(transform));
+            ret = xmlSecBufferSetSize(out, xmlSecBufferGetSize(out) + outSize);
+            if(ret < 0) {
+                xmlSecInternalError("xmlSecBufferSetSize", xmlSecTransformGetName(transform));
+                return(-1);
+            }
+
+            if(encrypt) {
+                /* Get tag for encryption */
+                ret = EVP_CIPHER_CTX_ctrl(ctx->cipherCtx, EVP_CTRL_AEAD_GET_TAG,
+                                         XMLSEC_CHACHA20_POLY1305_TAG_SIZE, tag);
+                if(ret != 1) {
+                    xmlSecOpenSSLError("EVP_CIPHER_CTX_ctrl(get_tag)", xmlSecTransformGetName(transform));
+                    return(-1);
+                }
+                ret = xmlSecBufferAppend(out, tag, XMLSEC_CHACHA20_POLY1305_TAG_SIZE);
+                if(ret < 0) {
+                    xmlSecInternalError("xmlSecBufferAppend(tag)", xmlSecTransformGetName(transform));
+                    return(-1);
+                }
+            } else {
+                /* Remove tag from input */
+                ret = xmlSecBufferRemoveHead(in, XMLSEC_CHACHA20_POLY1305_TAG_SIZE);
+                if(ret < 0) {
+                    xmlSecInternalError("xmlSecBufferRemoveHead(tag)", xmlSecTransformGetName(transform));
+                    return(-1);
+                }
+            }
+
+            transform->status = xmlSecTransformStatusFinished;
+        }
+    } else if(transform->status == xmlSecTransformStatusFinished) {
+        /* Nothing to do */
+    } else {
+        xmlSecInvalidTransfromStatusError(transform);
+        return(-1);
+    }
+
+    return(0);
+}
+
+static xmlSecTransformKlass xmlSecOpenSSLChaCha20Poly1305Klass = {
+    /* klass/object sizes */
+    sizeof(xmlSecTransformKlass),               /* xmlSecSize klassSize */
+    xmlSecOpenSSLChaCha20Poly1305Size,          /* xmlSecSize objSize */
+
+    xmlSecNameChaCha20Poly1305,                 /* const xmlChar* name; */
+    xmlSecHrefChaCha20Poly1305,                 /* const xmlChar* href; */
+    xmlSecTransformUsageEncryptionMethod,       /* xmlSecAlgorithmUsage usage; */
+
+    xmlSecOpenSSLChaCha20Poly1305Initialize,    /* xmlSecTransformInitializeMethod initialize; */
+    xmlSecOpenSSLChaCha20Poly1305Finalize,      /* xmlSecTransformFinalizeMethod finalize; */
+    xmlSecOpenSSLChaCha20Poly1305NodeRead,      /* xmlSecTransformNodeReadMethod readNode; */
+    NULL,                                       /* xmlSecTransformNodeWriteMethod writeNode; */
+
+    xmlSecOpenSSLChaCha20Poly1305SetKeyReq,     /* xmlSecTransformSetKeyReqMethod setKeyReq; */
+    xmlSecOpenSSLChaCha20Poly1305SetKey,        /* xmlSecTransformSetKeyMethod setKey; */
+    NULL,                                       /* xmlSecTransformValidateMethod validate; */
+    xmlSecTransformDefaultGetDataType,          /* xmlSecTransformGetDataTypeMethod getDataType; */
+    xmlSecTransformDefaultPushBin,              /* xmlSecTransformPushBinMethod pushBin; */
+    xmlSecTransformDefaultPopBin,               /* xmlSecTransformPopBinMethod popBin; */
+    NULL,                                       /* xmlSecTransformPushXmlMethod pushXml; */
+    NULL,                                       /* xmlSecTransformPopXmlMethod popXml; */
+
+    xmlSecOpenSSLChaCha20Poly1305Execute,       /* xmlSecTransformExecuteMethod execute; */
+
+    NULL,                                       /* void* reserved0; */
+    NULL,                                       /* void* reserved1; */
+};
+
+/**
+ * xmlSecOpenSSLTransformChaCha20Poly1305GetKlass:
+ *
+ * ChaCha20-Poly1305 AEAD encryption transform.
+ *
+ * Returns: pointer to ChaCha20-Poly1305 transform.
+ */
+xmlSecTransformId
+xmlSecOpenSSLTransformChaCha20Poly1305GetKlass(void) {
+    return(&xmlSecOpenSSLChaCha20Poly1305Klass);
+}
+
+#endif /* XMLSEC_NO_CHACHA20 */

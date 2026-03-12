@@ -95,6 +95,14 @@ xmlSecCryptoGetFunctions_openssl(void) {
     gXmlSecOpenSSLFunctions->keyDataAesGetKlass         = xmlSecOpenSSLKeyDataAesGetKlass;
 #endif /* XMLSEC_NO_AES */
 
+#ifndef XMLSEC_NO_CAMELLIA
+    gXmlSecOpenSSLFunctions->keyDataCamelliaGetKlass    = xmlSecOpenSSLKeyDataCamelliaGetKlass;
+#endif /* XMLSEC_NO_CAMELLIA */
+
+#ifndef XMLSEC_NO_CHACHA20
+    gXmlSecOpenSSLFunctions->keyDataChaCha20GetKlass    = xmlSecOpenSSLKeyDataChaCha20GetKlass;
+#endif /* XMLSEC_NO_CHACHA20 */
+
 #ifndef XMLSEC_NO_CONCATKDF
     gXmlSecOpenSSLFunctions->keyDataConcatKdfGetKlass   = xmlSecOpenSSLKeyDataConcatKdfGetKlass;
 #endif /* XMLSEC_NO_CONCATKDF */
@@ -132,6 +140,10 @@ xmlSecCryptoGetFunctions_openssl(void) {
     gXmlSecOpenSSLFunctions->keyDataPbkdf2GetKlass      = xmlSecOpenSSLKeyDataPbkdf2GetKlass;
 #endif /* XMLSEC_NO_PBKDF2 */
 
+#ifndef XMLSEC_NO_HKDF
+    gXmlSecOpenSSLFunctions->keyDataHkdfGetKlass        = xmlSecOpenSSLKeyDataHkdfGetKlass;
+#endif /* XMLSEC_NO_HKDF */
+
 #ifndef XMLSEC_NO_RSA
     gXmlSecOpenSSLFunctions->keyDataRsaGetKlass         = xmlSecOpenSSLKeyDataRsaGetKlass;
 #endif /* XMLSEC_NO_RSA */
@@ -143,6 +155,14 @@ xmlSecCryptoGetFunctions_openssl(void) {
 #ifndef XMLSEC_NO_SLHDSA
     gXmlSecOpenSSLFunctions->keyDataSLHDSAGetKlass      = xmlSecOpenSSLKeyDataSLHDSAGetKlass;
 #endif /* XMLSEC_NO_SLHDSA */
+
+#ifndef XMLSEC_NO_EDDSA
+    gXmlSecOpenSSLFunctions->keyDataEdDSAGetKlass       = xmlSecOpenSSLKeyDataEdDSAGetKlass;
+#endif /* XMLSEC_NO_EDDSA */
+
+#ifndef XMLSEC_NO_XDH
+    gXmlSecOpenSSLFunctions->keyDataXdhGetKlass         = xmlSecOpenSSLKeyDataXdhGetKlass;
+#endif /* XMLSEC_NO_XDH */
 
 #ifndef XMLSEC_NO_X509
     gXmlSecOpenSSLFunctions->keyDataX509GetKlass        = xmlSecOpenSSLKeyDataX509GetKlass;
@@ -178,6 +198,24 @@ xmlSecCryptoGetFunctions_openssl(void) {
     gXmlSecOpenSSLFunctions->transformKWAes192GetKlass          = xmlSecOpenSSLTransformKWAes192GetKlass;
     gXmlSecOpenSSLFunctions->transformKWAes256GetKlass          = xmlSecOpenSSLTransformKWAes256GetKlass;
 #endif /* XMLSEC_NO_AES */
+
+
+    /******************************* CAMELLIA ********************************/
+#ifndef XMLSEC_NO_CAMELLIA
+    gXmlSecOpenSSLFunctions->transformCamellia128CbcGetKlass    = xmlSecOpenSSLTransformCamellia128CbcGetKlass;
+    gXmlSecOpenSSLFunctions->transformCamellia192CbcGetKlass    = xmlSecOpenSSLTransformCamellia192CbcGetKlass;
+    gXmlSecOpenSSLFunctions->transformCamellia256CbcGetKlass    = xmlSecOpenSSLTransformCamellia256CbcGetKlass;
+    gXmlSecOpenSSLFunctions->transformKWCamellia128GetKlass     = xmlSecOpenSSLTransformKWCamellia128GetKlass;
+    gXmlSecOpenSSLFunctions->transformKWCamellia192GetKlass     = xmlSecOpenSSLTransformKWCamellia192GetKlass;
+    gXmlSecOpenSSLFunctions->transformKWCamellia256GetKlass     = xmlSecOpenSSLTransformKWCamellia256GetKlass;
+#endif /* XMLSEC_NO_CAMELLIA */
+
+
+    /******************************* CHACHA20 ********************************/
+#ifndef XMLSEC_NO_CHACHA20
+    gXmlSecOpenSSLFunctions->transformChaCha20GetKlass          = xmlSecOpenSSLTransformChaCha20GetKlass;
+    gXmlSecOpenSSLFunctions->transformChaCha20Poly1305GetKlass  = xmlSecOpenSSLTransformChaCha20Poly1305GetKlass;
+#endif /* XMLSEC_NO_CHACHA20 */
 
 
     /******************************* CONCATKDF ********************************/
@@ -248,6 +286,12 @@ xmlSecCryptoGetFunctions_openssl(void) {
 
 #endif /* XMLSEC_NO_EC */
 
+    /******************************* XDH ********************************/
+#ifndef XMLSEC_NO_XDH
+    gXmlSecOpenSSLFunctions->transformX25519GetKlass            = xmlSecOpenSSLTransformX25519GetKlass;
+    gXmlSecOpenSSLFunctions->transformX448GetKlass              = xmlSecOpenSSLTransformX448GetKlass;
+#endif /* XMLSEC_NO_XDH */
+
     /******************************* GOST ********************************/
 #ifndef XMLSEC_NO_GOST
     gXmlSecOpenSSLFunctions->transformGost2001GostR3411_94GetKlass     = xmlSecOpenSSLTransformGost2001GostR3411_94GetKlass;
@@ -312,6 +356,11 @@ xmlSecCryptoGetFunctions_openssl(void) {
 #ifndef XMLSEC_NO_PBKDF2
     gXmlSecOpenSSLFunctions->transformPbkdf2GetKlass            = xmlSecOpenSSLTransformPbkdf2GetKlass;
 #endif /* XMLSEC_NO_PBKDF2 */
+
+    /******************************* HKDF ********************************/
+#ifndef XMLSEC_NO_HKDF
+    gXmlSecOpenSSLFunctions->transformHkdfGetKlass              = xmlSecOpenSSLTransformHkdfGetKlass;
+#endif /* XMLSEC_NO_HKDF */
 
     /******************************* RIPEMD160 ********************************/
 #ifndef XMLSEC_NO_RIPEMD160
@@ -400,6 +449,14 @@ xmlSecCryptoGetFunctions_openssl(void) {
     gXmlSecOpenSSLFunctions->transformSLHDSA_SHA2_256sGetKlass = xmlSecOpenSSLTransformSLHDSA_SHA2_256sGetKlass;
 #endif /* XMLSEC_NO_SLHDSA */
 
+#ifndef XMLSEC_NO_EDDSA
+    gXmlSecOpenSSLFunctions->transformEdDSAEd25519GetKlass    = xmlSecOpenSSLTransformEdDSAEd25519GetKlass;
+    gXmlSecOpenSSLFunctions->transformEdDSAEd25519ctxGetKlass = xmlSecOpenSSLTransformEdDSAEd25519ctxGetKlass;
+    gXmlSecOpenSSLFunctions->transformEdDSAEd25519phGetKlass  = xmlSecOpenSSLTransformEdDSAEd25519phGetKlass;
+    gXmlSecOpenSSLFunctions->transformEdDSAEd448GetKlass      = xmlSecOpenSSLTransformEdDSAEd448GetKlass;
+    gXmlSecOpenSSLFunctions->transformEdDSAEd448phGetKlass    = xmlSecOpenSSLTransformEdDSAEd448phGetKlass;
+#endif /* XMLSEC_NO_EDDSA */
+
 
     /******************************* SHA ********************************/
 #ifndef XMLSEC_NO_SHA1
@@ -446,6 +503,7 @@ xmlSecCryptoGetFunctions_openssl(void) {
     gXmlSecOpenSSLFunctions->cryptoAppKeysMngrCertLoad          = xmlSecOpenSSLAppKeysMngrCertLoad;
     gXmlSecOpenSSLFunctions->cryptoAppKeysMngrCertLoadMemory    = xmlSecOpenSSLAppKeysMngrCertLoadMemory;
     gXmlSecOpenSSLFunctions->cryptoAppKeysMngrCrlLoad           = xmlSecOpenSSLAppKeysMngrCrlLoad;
+    gXmlSecOpenSSLFunctions->cryptoAppKeysMngrCrlLoadAndVerify  = xmlSecOpenSSLAppKeysMngrCrlLoadAndVerify;
     gXmlSecOpenSSLFunctions->cryptoAppKeysMngrCrlLoadMemory     = xmlSecOpenSSLAppKeysMngrCrlLoadMemory;
     gXmlSecOpenSSLFunctions->cryptoAppPkcs12Load                = xmlSecOpenSSLAppPkcs12Load;
     gXmlSecOpenSSLFunctions->cryptoAppPkcs12LoadMemory          = xmlSecOpenSSLAppPkcs12LoadMemory;
@@ -568,7 +626,7 @@ xmlSecOpenSSLGenerateRandom(xmlSecBufferPtr buffer, xmlSecSize size) {
 
     /* get random data */
     ret = RAND_priv_bytes_ex(xmlSecOpenSSLGetLibCtx(), (xmlSecByte*)xmlSecBufferGetData(buffer), size,
-                        XMLSEEC_OPENSSL_RAND_BYTES_STRENGTH);
+                        XMLSEC_OPENSSL_RAND_BYTES_STRENGTH);
     if(ret != 1) {
         xmlSecOpenSSLError2("RAND_priv_bytes_ex", NULL,
                             "size=" XMLSEC_SIZE_FMT, size);

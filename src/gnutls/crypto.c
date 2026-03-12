@@ -72,6 +72,10 @@ xmlSecCryptoGetFunctions_gnutls(void) {
     gXmlSecGnuTLSFunctions->keyDataAesGetKlass          = xmlSecGnuTLSKeyDataAesGetKlass;
 #endif /* XMLSEC_NO_AES */
 
+#ifndef XMLSEC_NO_CAMELLIA
+    gXmlSecGnuTLSFunctions->keyDataCamelliaGetKlass     = xmlSecGnuTLSKeyDataCamelliaGetKlass;
+#endif /* XMLSEC_NO_CAMELLIA */
+
 #ifndef XMLSEC_NO_DES
     gXmlSecGnuTLSFunctions->keyDataDesGetKlass          = xmlSecGnuTLSKeyDataDesGetKlass;
 #endif /* XMLSEC_NO_DES */
@@ -97,6 +101,18 @@ xmlSecCryptoGetFunctions_gnutls(void) {
     gXmlSecGnuTLSFunctions->keyDataMLDSAGetKlass        = xmlSecGnuTLSKeyDataMLDSAGetKlass;
 #endif /* XMLSEC_NO_MLDSA */
 
+#ifndef XMLSEC_NO_EDDSA
+    gXmlSecGnuTLSFunctions->keyDataEdDSAGetKlass        = xmlSecGnuTLSKeyDataEdDSAGetKlass;
+#endif /* XMLSEC_NO_EDDSA */
+
+#ifndef XMLSEC_NO_XDH
+    gXmlSecGnuTLSFunctions->keyDataXdhGetKlass          = xmlSecGnuTLSKeyDataXdhGetKlass;
+#endif /* XMLSEC_NO_XDH */
+
+#ifndef XMLSEC_NO_CONCATKDF
+    gXmlSecGnuTLSFunctions->keyDataConcatKdfGetKlass    = xmlSecGnuTLSKeyDataConcatKdfGetKlass;
+#endif /* XMLSEC_NO_CONCATKDF */
+
 #ifndef XMLSEC_NO_HMAC
     gXmlSecGnuTLSFunctions->keyDataHmacGetKlass         = xmlSecGnuTLSKeyDataHmacGetKlass;
 #endif /* XMLSEC_NO_HMAC */
@@ -104,6 +120,10 @@ xmlSecCryptoGetFunctions_gnutls(void) {
 #ifndef XMLSEC_NO_PBKDF2
     gXmlSecGnuTLSFunctions->keyDataPbkdf2GetKlass       = xmlSecGnuTLSKeyDataPbkdf2GetKlass;
 #endif /* XMLSEC_NO_PBKDF2 */
+
+#ifndef XMLSEC_NO_HKDF
+    gXmlSecGnuTLSFunctions->keyDataHkdfGetKlass         = xmlSecGnuTLSKeyDataHkdfGetKlass;
+#endif /* XMLSEC_NO_HKDF */
 
 #ifndef XMLSEC_NO_RSA
     gXmlSecGnuTLSFunctions->keyDataRsaGetKlass          = xmlSecGnuTLSKeyDataRsaGetKlass;
@@ -145,6 +165,17 @@ xmlSecCryptoGetFunctions_gnutls(void) {
     gXmlSecGnuTLSFunctions->transformKWAes192GetKlass           = xmlSecGnuTLSTransformKWAes192GetKlass;
     gXmlSecGnuTLSFunctions->transformKWAes256GetKlass           = xmlSecGnuTLSTransformKWAes256GetKlass;
 #endif /* XMLSEC_NO_AES */
+
+    /******************************* Camellia ********************************/
+#ifndef XMLSEC_NO_CAMELLIA
+    gXmlSecGnuTLSFunctions->transformCamellia128CbcGetKlass     = xmlSecGnuTLSTransformCamellia128CbcGetKlass;
+    gXmlSecGnuTLSFunctions->transformCamellia192CbcGetKlass     = xmlSecGnuTLSTransformCamellia192CbcGetKlass;
+    gXmlSecGnuTLSFunctions->transformCamellia256CbcGetKlass     = xmlSecGnuTLSTransformCamellia256CbcGetKlass;
+
+    gXmlSecGnuTLSFunctions->transformKWCamellia128GetKlass      = xmlSecGnuTLSTransformKWCamellia128GetKlass;
+    gXmlSecGnuTLSFunctions->transformKWCamellia192GetKlass      = xmlSecGnuTLSTransformKWCamellia192GetKlass;
+    gXmlSecGnuTLSFunctions->transformKWCamellia256GetKlass      = xmlSecGnuTLSTransformKWCamellia256GetKlass;
+#endif /* XMLSEC_NO_CAMELLIA */
 
     /******************************* DES ********************************/
 #ifndef XMLSEC_NO_DES
@@ -211,6 +242,28 @@ xmlSecCryptoGetFunctions_gnutls(void) {
     gXmlSecGnuTLSFunctions->transformMLDSA87GetKlass            = xmlSecGnuTLSTransformMLDSA87GetKlass;
 #endif /* XMLSEC_NO_MLDSA */
 
+    /******************************* EdDSA ********************************/
+#ifndef XMLSEC_NO_EDDSA
+    gXmlSecGnuTLSFunctions->transformEdDSAEd25519GetKlass       = xmlSecGnuTLSTransformEdDSAEd25519GetKlass;
+    gXmlSecGnuTLSFunctions->transformEdDSAEd448GetKlass         = xmlSecGnuTLSTransformEdDSAEd448GetKlass;
+#endif /* XMLSEC_NO_EDDSA */
+
+    /******************************* XDH ********************************/
+#ifndef XMLSEC_NO_XDH
+    gXmlSecGnuTLSFunctions->transformX25519GetKlass             = xmlSecGnuTLSTransformX25519GetKlass;
+    gXmlSecGnuTLSFunctions->transformX448GetKlass               = xmlSecGnuTLSTransformX448GetKlass;
+#endif /* XMLSEC_NO_XDH */
+
+    /******************************* ECDH ********************************/
+#ifndef XMLSEC_NO_EC
+    gXmlSecGnuTLSFunctions->transformEcdhGetKlass               = xmlSecGnuTLSTransformEcdhGetKlass;
+#endif /* XMLSEC_NO_EC */
+
+    /******************************* ConcatKDF ********************************/
+#ifndef XMLSEC_NO_CONCATKDF
+    gXmlSecGnuTLSFunctions->transformConcatKdfGetKlass          = xmlSecGnuTLSTransformConcatKdfGetKlass;
+#endif /* XMLSEC_NO_CONCATKDF */
+
 
     /******************************* HMAC ********************************/
 #ifndef XMLSEC_NO_HMAC
@@ -237,6 +290,11 @@ xmlSecCryptoGetFunctions_gnutls(void) {
 #ifndef XMLSEC_NO_PBKDF2
     gXmlSecGnuTLSFunctions->transformPbkdf2GetKlass             = xmlSecGnuTLSTransformPbkdf2GetKlass;
 #endif /* XMLSEC_NO_PBKDF2 */
+
+    /******************************* HKDF ********************************/
+#ifndef XMLSEC_NO_HKDF
+    gXmlSecGnuTLSFunctions->transformHkdfGetKlass               = xmlSecGnuTLSTransformHkdfGetKlass;
+#endif /* XMLSEC_NO_HKDF */
 
     /******************************* RSA ********************************/
 #ifndef XMLSEC_NO_RSA
@@ -314,6 +372,7 @@ xmlSecCryptoGetFunctions_gnutls(void) {
     gXmlSecGnuTLSFunctions->cryptoAppKeysMngrCertLoad           = xmlSecGnuTLSAppKeysMngrCertLoad;
     gXmlSecGnuTLSFunctions->cryptoAppKeysMngrCertLoadMemory     = xmlSecGnuTLSAppKeysMngrCertLoadMemory;
     gXmlSecGnuTLSFunctions->cryptoAppKeysMngrCrlLoad            = xmlSecGnuTLSAppKeysMngrCrlLoad;
+    gXmlSecGnuTLSFunctions->cryptoAppKeysMngrCrlLoadAndVerify   = xmlSecGnuTLSAppKeysMngrCrlLoadAndVerify;
     gXmlSecGnuTLSFunctions->cryptoAppKeysMngrCrlLoadMemory      = xmlSecGnuTLSAppKeysMngrCrlLoadMemory;
     gXmlSecGnuTLSFunctions->cryptoAppPkcs12Load                 = xmlSecGnuTLSAppPkcs12Load;
     gXmlSecGnuTLSFunctions->cryptoAppKeyCertLoad                = xmlSecGnuTLSAppKeyCertLoad;
